@@ -25,7 +25,7 @@ const levelLayout = [
 
 const solids = new Set(["#", "B", "Q"]);
 
-const map = levelLayout.map((row) => row.split(""));
+let map = levelLayout.map((row) => row.split(""));
 
 const camera = {
   x: 0,
@@ -183,9 +183,12 @@ const player = new Player(100, 100);
 const enemies = [];
 const mushrooms = [];
 
-spawnEnemies();
 
-function spawnEnemies() {
+function resetGame() {
+  map = levelLayout.map((row) => row.split(""));
+  enemies.length = 0;
+  mushrooms.length = 0;
+
   for (let y = 0; y < map.length; y++) {
     for (let x = 0; x < map[y].length; x++) {
       if (map[y][x] === "M") {
@@ -194,12 +197,27 @@ function spawnEnemies() {
       }
     }
   }
+
+  player.setBig(false);
+  player.pos.x = 100;
+  player.pos.y = 100;
+  player.vel.x = 0;
+  player.vel.y = 0;
+  player.onGround = false;
+  input.jumpQueued = false;
+  camera.x = 0;
+}
+
+function getWorldWidth() {
+  return map[0].length * TILE_SIZE;
 }
 
 function updateCamera() {
-  const targetX = player.pos.x - canvas.width / 2 + player.size.x / 2;
+  const viewWidth = canvas.width / WORLD_SCALE;
+  const targetX = player.pos.x - viewWidth / 2 + player.size.x / 2;
   camera.x += (targetX - camera.x) * 0.1;
-  camera.x = Math.max(0, camera.x);
+  const maxCameraX = Math.max(0, getWorldWidth() - viewWidth);
+  camera.x = Math.max(0, Math.min(camera.x, maxCameraX));
 }
 
 function tilesInAABB(left, top, right, bottom) {
@@ -259,6 +277,9 @@ function hitBlock(x, y) {
   }
 }
 
+
+resetGame();
+
 let lastTime = performance.now();
 function gameLoop(now) {
   const dt = Math.min((now - lastTime) / 1000, 1 / 30);
@@ -271,6 +292,13 @@ function gameLoop(now) {
 
 function update(dt) {
   updatePlayer(dt);
+
+
+  if (player.bottom > map.length * TILE_SIZE + TILE_SIZE) {
+    resetGame();
+    return;
+  }
+
   updateCamera();
 
   for (const enemy of enemies) {
@@ -280,7 +308,11 @@ function update(dt) {
     mushroom.update(dt);
   }
 
-  checkPlayerEnemyCollisions();
+
+  if (checkPlayerEnemyCollisions()) {
+    return;
+  }
+
   checkPlayerMushroomCollisions();
 
   cleanupDeadEntities(enemies);
@@ -310,6 +342,14 @@ function updatePlayer(dt) {
   player.pos.x += player.vel.x * dt;
   resolveAxisCollision(player, "x");
 
+
+  const worldWidth = getWorldWidth();
+  if (player.left < 0) {
+    player.pos.x = 0;
+  } else if (player.right > worldWidth) {
+    player.pos.x = worldWidth - player.size.x;
+  }
+
   player.pos.y += player.vel.y * dt;
   player.onGround = false;
   resolveAxisCollision(player, "y");
@@ -331,15 +371,13 @@ function checkPlayerEnemyCollisions() {
         enemy.dead = true;
         player.vel.y = -JUMP_SPEED * 0.6;
       } else {
-        // reset player
-        player.pos.x = 100;
-        player.pos.y = 100;
-        player.vel.x = 0;
-        player.vel.y = 0;
-        player.setBig(false);
+
+        resetGame();
+        return true;
       }
     }
   }
+  return false;
 }
 
 function checkPlayerMushroomCollisions() {
@@ -370,7 +408,7 @@ function draw() {
 
   drawBackground(width, height);
   drawTiles();
-  drawEntity(player, player.big ? "#ffb347" : "#f74b3d");
+  drawPlayerDog(player);
   enemies.forEach((enemy) => drawEntity(enemy, "#4a2f1b"));
   mushrooms.forEach((mushroom) => drawEntity(mushroom, "#ff5f00"));
 
@@ -438,6 +476,112 @@ function drawEntity(entity, color) {
   ctx.fillRect(entity.pos.x, entity.pos.y, entity.size.x, entity.size.y);
   ctx.strokeStyle = "rgba(0,0,0,0.2)";
   ctx.strokeRect(entity.pos.x, entity.pos.y, entity.size.x, entity.size.y);
+}
+
+function fillRoundedRect(x, y, width, height, radius) {
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawPlayerDog(entity) {
+  const { x, y } = entity.pos;
+  const width = entity.size.x;
+  const height = entity.size.y;
+  const bodyHeight = height * 0.45;
+  const headSize = Math.min(width * 0.7, height * 0.55);
+  const legWidth = width * 0.18;
+  const legHeight = height * 0.2;
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  const furColor = "#a66a2c";
+  const earColor = "#8b4f1f";
+  const muzzleColor = "#f0d5b2";
+
+  // Tail
+  ctx.fillStyle = furColor;
+  ctx.beginPath();
+  ctx.moveTo(width * 0.85, height - bodyHeight * 0.7);
+  ctx.quadraticCurveTo(width * 1.05, height - bodyHeight, width * 0.92, height - bodyHeight * 1.4);
+  ctx.lineTo(width * 0.78, height - bodyHeight * 1.05);
+  ctx.closePath();
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = furColor;
+  fillRoundedRect(width * 0.15, height - bodyHeight, width * 0.7, bodyHeight, bodyHeight * 0.4);
+
+  // Belly highlight
+  ctx.fillStyle = "rgba(255, 240, 210, 0.7)";
+  fillRoundedRect(width * 0.25, height - bodyHeight * 0.85, width * 0.5, bodyHeight * 0.6, bodyHeight * 0.3);
+
+  // Legs
+  ctx.fillStyle = furColor;
+  for (let i = 0; i < 2; i++) {
+    const offset = i === 0 ? width * 0.22 : width * 0.58;
+    ctx.fillRect(offset, height - legHeight, legWidth, legHeight);
+  }
+
+  // Head
+  ctx.fillStyle = furColor;
+  ctx.beginPath();
+  ctx.arc(width * 0.35, height - bodyHeight, headSize / 2, Math.PI * 0.15, Math.PI * 1.85);
+  ctx.fill();
+
+  // Ears
+  ctx.fillStyle = earColor;
+  ctx.beginPath();
+  ctx.ellipse(width * 0.22, height - bodyHeight - headSize * 0.1, headSize * 0.18, headSize * 0.35, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(width * 0.46, height - bodyHeight - headSize * 0.1, headSize * 0.18, headSize * 0.35, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Muzzle
+  ctx.fillStyle = muzzleColor;
+  ctx.beginPath();
+  ctx.ellipse(width * 0.38, height - bodyHeight * 0.75, headSize * 0.32, headSize * 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = "#1f1b1a";
+  ctx.beginPath();
+  ctx.arc(width * 0.3, height - bodyHeight * 0.95, headSize * 0.06, 0, Math.PI * 2);
+  ctx.arc(width * 0.41, height - bodyHeight * 0.95, headSize * 0.06, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(width * 0.29, height - bodyHeight * 0.97, headSize * 0.025, 0, Math.PI * 2);
+  ctx.arc(width * 0.4, height - bodyHeight * 0.97, headSize * 0.025, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Nose
+  ctx.fillStyle = "#1d1715";
+  ctx.beginPath();
+  ctx.arc(width * 0.44, height - bodyHeight * 0.74, headSize * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Smile
+  ctx.strokeStyle = "#1d1715";
+  ctx.lineWidth = Math.max(1.5, headSize * 0.02);
+  ctx.beginPath();
+  ctx.arc(width * 0.39, height - bodyHeight * 0.7, headSize * 0.18, Math.PI * 0.15, Math.PI * 0.65);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 requestAnimationFrame(gameLoop);

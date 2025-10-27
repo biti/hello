@@ -110,6 +110,7 @@ document.addEventListener("keydown", (ev) => {
   if (ev.key === "Enter" && !ev.repeat) {
     attemptFire();
   }
+
   const action = keys.get(ev.key);
   if (!action) return;
   if (action === "jump") {
@@ -574,6 +575,7 @@ function updatePlayer(dt) {
   if (input.left) move -= 1;
   if (input.right) move += 1;
   player.vel.x = move * MAX_SPEED_X;
+
   if (move !== 0) {
     player.facing = move;
   }
@@ -692,6 +694,7 @@ function draw() {
   drawTiles();
   drawPlayerDog(player);
   enemies.forEach((enemy) => drawEntity(enemy, "#4a2f1b"));
+
   bullets.forEach((bullet) => drawBullet(bullet));
   if (boss && !boss.dead) {
     drawBoss(boss);
@@ -742,6 +745,7 @@ function drawBrick(x, y) {
   ctx.strokeStyle = "#9c5321";
   ctx.lineWidth = 3;
   ctx.strokeRect(x + 4, y + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+
   ctx.beginPath();
   ctx.moveTo(x, y + TILE_SIZE / 2);
   ctx.lineTo(x + TILE_SIZE, y + TILE_SIZE / 2);
@@ -905,6 +909,7 @@ function drawPlayerDog(entity) {
     width * 0.92,
     height - bodyHeight * 1.4
   );
+
   ctx.lineTo(width * 0.78, height - bodyHeight * 1.05);
   ctx.closePath();
   ctx.fill();

@@ -183,6 +183,7 @@ const player = new Player(100, 100);
 const enemies = [];
 const mushrooms = [];
 
+
 function resetGame() {
   map = levelLayout.map((row) => row.split(""));
   enemies.length = 0;
@@ -276,6 +277,7 @@ function hitBlock(x, y) {
   }
 }
 
+
 resetGame();
 
 let lastTime = performance.now();
@@ -291,6 +293,7 @@ function gameLoop(now) {
 function update(dt) {
   updatePlayer(dt);
 
+
   if (player.bottom > map.length * TILE_SIZE + TILE_SIZE) {
     resetGame();
     return;
@@ -305,9 +308,11 @@ function update(dt) {
     mushroom.update(dt);
   }
 
+
   if (checkPlayerEnemyCollisions()) {
     return;
   }
+
   checkPlayerMushroomCollisions();
 
   cleanupDeadEntities(enemies);
@@ -337,6 +342,7 @@ function updatePlayer(dt) {
   player.pos.x += player.vel.x * dt;
   resolveAxisCollision(player, "x");
 
+
   const worldWidth = getWorldWidth();
   if (player.left < 0) {
     player.pos.x = 0;
@@ -365,6 +371,7 @@ function checkPlayerEnemyCollisions() {
         enemy.dead = true;
         player.vel.y = -JUMP_SPEED * 0.6;
       } else {
+
         resetGame();
         return true;
       }

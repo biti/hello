@@ -2,51 +2,475 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>迷你马里奥</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Éclat Intimates | 内衣品牌</title>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Poppins:wght@300;400;600&display=swap");
+
       :root {
-        color-scheme: light dark;
+        --pink: #f7b7d4;
+        --pink-strong: #ff5da2;
+        --dark: #111;
+        --dark-soft: #1f1f1f;
+        --light: #fff5f8;
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       body {
         margin: 0;
-        font-family: "Noto Sans SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          "PingFang SC", "Microsoft YaHei", sans-serif;
-        background: linear-gradient(#6ab7ff, #c7e6ff 55%, #7c4d2b 55%, #5c391f 100%);
-        overflow: hidden;
+        font-family: "Poppins", "Noto Sans SC", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: linear-gradient(160deg, var(--dark) 0%, #1d0f16 45%, var(--pink-strong) 100%);
+        color: #fff;
       }
 
-      #game {
-        display: block;
-        width: 100vw;
-        height: 100vh;
+      .page {
+        background: linear-gradient(160deg, rgba(17, 17, 17, 0.85), rgba(17, 17, 17, 0.6));
+        backdrop-filter: blur(18px);
+        min-height: 100vh;
       }
 
-      #hud {
-        position: fixed;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.75);
-        color: #222;
-        padding: 6px 12px;
-        border-radius: 12px;
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 28px 8vw 12px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: linear-gradient(180deg, rgba(17, 17, 17, 0.95), rgba(17, 17, 17, 0.4));
+      }
+
+      .brand {
+        font-family: "Playfair Display", "Songti SC", serif;
+        font-size: clamp(24px, 3vw, 36px);
+        letter-spacing: 0.2rem;
+        text-transform: uppercase;
+      }
+
+      .language-toggle {
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        padding: 8px 18px;
         font-size: 14px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        transition: all 0.25s ease;
       }
 
-      @media (max-width: 600px) {
-        #hud {
-          font-size: 12px;
-          padding: 4px 8px;
+      .language-toggle:hover,
+      .language-toggle:focus {
+        border-color: var(--pink);
+        color: var(--pink);
+        outline: none;
+      }
+
+      main {
+        padding: 0 8vw 10vh;
+        display: flex;
+        flex-direction: column;
+        gap: 84px;
+      }
+
+      section {
+        display: grid;
+        gap: 32px;
+      }
+
+      .hero {
+        margin-top: 10vh;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        align-items: center;
+        gap: 56px;
+      }
+
+      .hero h1 {
+        font-family: "Playfair Display", "Songti SC", serif;
+        font-size: clamp(36px, 4.6vw, 62px);
+        margin: 0 0 16px;
+        line-height: 1.1;
+      }
+
+      .hero p {
+        margin: 0;
+        font-size: clamp(16px, 1.2vw, 20px);
+        color: rgba(255, 255, 255, 0.76);
+      }
+
+      .hero .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 32px;
+        background: var(--pink-strong);
+        border: none;
+        color: var(--dark);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.16rem;
+        border-radius: 999px;
+        padding: 16px 28px;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .hero .cta:hover,
+      .hero .cta:focus {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 30px rgba(255, 93, 162, 0.3);
+        outline: none;
+      }
+
+      .hero-img {
+        border-radius: 32px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 30px 70px rgba(255, 93, 162, 0.25);
+      }
+
+      .hero-img::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255, 93, 162, 0.55), rgba(17, 17, 17, 0.4));
+      }
+
+      .hero-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .features {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .feature-card {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 24px;
+        padding: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: transform 0.3s ease, background 0.3s ease;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-6px);
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .feature-card h3 {
+        font-family: "Playfair Display", "Songti SC", serif;
+        font-size: 24px;
+        margin: 0 0 12px;
+      }
+
+      .feature-card p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.68);
+      }
+
+      .gallery {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 22px;
+      }
+
+      .gallery img {
+        width: 100%;
+        border-radius: 18px;
+        height: 320px;
+        object-fit: cover;
+        filter: saturate(1.05) contrast(1.05);
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      .gallery img:hover {
+        transform: translateY(-6px) scale(1.01);
+        box-shadow: 0 24px 50px rgba(255, 93, 162, 0.35);
+      }
+
+      .video-section {
+        justify-items: center;
+        text-align: center;
+      }
+
+      .video-section h2,
+      .gallery-title,
+      .features-title {
+        font-family: "Playfair Display", "Songti SC", serif;
+        font-size: clamp(28px, 3vw, 40px);
+        margin: 0 0 16px;
+      }
+
+      .video-section p,
+      .gallery-subtitle {
+        margin: 0 0 32px;
+        max-width: 720px;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .video-wrapper {
+        position: relative;
+        width: min(960px, 100%);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 30px 70px rgba(255, 93, 162, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: #000;
+      }
+
+      .video-wrapper::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(255, 93, 162, 0.35));
+      }
+
+      video {
+        width: 100%;
+        display: block;
+      }
+
+      footer {
+        padding: 48px 8vw 56px;
+        background: rgba(17, 17, 17, 0.92);
+        text-align: center;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
+      }
+
+      footer a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        color: var(--pink);
+      }
+
+      @media (max-width: 720px) {
+        header {
+          padding: 20px 6vw 8px;
+        }
+
+        main {
+          padding: 0 6vw 10vh;
+          gap: 64px;
+        }
+
+        .hero {
+          margin-top: 6vh;
+        }
+
+        .gallery img {
+          height: 240px;
         }
       }
     </style>
   </head>
   <body>
-    <div id="hud">方向键移动，空格跳跃，撞击砖块获得惊喜！</div>
-    <canvas id="game" width="960" height="540"></canvas>
-    <script src="src/game.js"></script>
+    <div class="page">
+      <header>
+        <div class="brand" data-i18n="brandName">Éclat Intimates</div>
+        <button class="language-toggle" data-i18n="toggle" data-i18n-aria-label="toggle" aria-label="切换至英文" type="button">
+          EN / 中文
+        </button>
+      </header>
+      <main>
+        <section class="hero">
+          <div class="hero-copy">
+            <h1 data-i18n="hero.title">以无畏风格，重新定义贴身奢华</h1>
+            <p data-i18n="hero.subtitle">
+              从巴黎到上海，Éclat Intimates 以高级定制工艺、科技面料与女性力量为灵感，打造轻奢内衣的国际化表达。
+            </p>
+            <button class="cta" type="button" data-i18n="hero.cta">探索全新系列</button>
+          </div>
+          <div class="hero-img">
+            <img
+              src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80"
+              alt="Éclat Intimates 品牌大使穿着粉色内衣"
+              loading="lazy"
+            />
+          </div>
+        </section>
+
+        <section class="features">
+          <h2 class="features-title" data-i18n="features.title">来自高级定制的三重保证</h2>
+          <div class="feature-card">
+            <h3 data-i18n="features.items.0.title">雕塑级剪裁</h3>
+            <p data-i18n="features.items.0.desc">3D 立体打版包裹每一处曲线，实现贴合与支撑的黄金比例。</p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.items.1.title">奢华面料</h3>
+            <p data-i18n="features.items.1.desc">甄选法国蕾丝、意大利真丝混纺，触感轻盈而持久。</p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.items.2.title">智能透气</h3>
+            <p data-i18n="features.items.2.desc">纳米透气科技随体温智能调节，实现全天舒适体验。</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="gallery-title" data-i18n="gallery.title">国际超模演绎本季灵感</h2>
+          <p class="gallery-subtitle" data-i18n="gallery.subtitle">
+            十三位来自全球时尚之都的模特，以不同肤色、风格与个性诠释 Éclat Intimates 的多元魅力。
+          </p>
+          <div class="gallery">
+            <img src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80" alt="模特展示黑色蕾丝内衣" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=900&q=80" alt="模特展示粉色丝绸睡袍" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80" alt="模特展示白色蕾丝文胸" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80" alt="模特展示粉色无钢圈内衣" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1521165946703-7082a07da095?auto=format&fit=crop&w=900&q=80" alt="模特展示红色蕾丝套装" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1524504381181-2981896ec95c?auto=format&fit=crop&w=900&q=80" alt="模特展示粉色拼接蕾丝套装" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1521572166287-8e0023a02897?auto=format&fit=crop&w=900&q=80" alt="模特展示法式蕾丝内衣" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1520869562399-e772f042f422?auto=format&fit=crop&w=900&q=80" alt="模特展示黑色连体内衣" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1515468381879-40d0ded8106b?auto=format&fit=crop&w=900&q=80" alt="模特展示经典黑色文胸" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80" alt="模特展示金属质感内衣" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1509870792079-ace4e9a18df7?auto=format&fit=crop&w=900&q=80" alt="模特展示丝绒内衣" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1526815713433-67a1b9815b68?auto=format&fit=crop&w=900&q=80" alt="模特展示运动风内衣" loading="lazy" />
+            <img src="https://images.unsplash.com/photo-1520854221050-0f4caff449fb?auto=format&fit=crop&w=900&q=80" alt="模特展示金属色调内衣" loading="lazy" />
+          </div>
+        </section>
+
+        <section class="video-section">
+          <h2 data-i18n="video.title">品牌宣言</h2>
+          <p data-i18n="video.subtitle">
+            以粉色力量和黑色自信交织的视觉语言，记录 Éclat Intimates 女士的真实故事——她们敢于表达、敢于拥抱自己。
+          </p>
+          <div class="video-wrapper">
+            <video controls preload="metadata" poster="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1200&q=80">
+              <source src="https://cdn.coverr.co/videos/coverr-floating-in-magenta-8151/1080p.mp4" type="video/mp4" />
+              <p data-i18n="video.fallback">
+                您的浏览器暂不支持视频播放。请升级浏览器以观看 Éclat Intimates 品牌影片。
+              </p>
+            </video>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <p data-i18n="footer.note">© 2024 Éclat Intimates. 保留所有权利。| 国际精品内衣品牌</p>
+        <p>
+          <a href="mailto:concierge@eclatintimates.com" data-i18n="footer.contact">全球贵宾专线：concierge@eclatintimates.com</a>
+        </p>
+      </footer>
+    </div>
+    <script>
+      const translations = {
+        zh: {
+          brandName: "Éclat Intimates",
+          toggle: "EN / 中文",
+          hero: {
+            title: "以无畏风格，重新定义贴身奢华",
+            subtitle:
+              "从巴黎到上海，Éclat Intimates 以高级定制工艺、科技面料与女性力量为灵感，打造轻奢内衣的国际化表达。",
+            cta: "探索全新系列"
+          },
+          features: {
+            title: "来自高级定制的三重保证",
+            items: [
+              { title: "雕塑级剪裁", desc: "3D 立体打版包裹每一处曲线，实现贴合与支撑的黄金比例。" },
+              { title: "奢华面料", desc: "甄选法国蕾丝、意大利真丝混纺，触感轻盈而持久。" },
+              { title: "智能透气", desc: "纳米透气科技随体温智能调节，实现全天舒适体验。" }
+            ]
+          },
+          gallery: {
+            title: "国际超模演绎本季灵感",
+            subtitle:
+              "十三位来自全球时尚之都的模特，以不同肤色、风格与个性诠释 Éclat Intimates 的多元魅力。"
+          },
+          video: {
+            title: "品牌宣言",
+            subtitle:
+              "以粉色力量和黑色自信交织的视觉语言，记录 Éclat Intimates 女士的真实故事——她们敢于表达、敢于拥抱自己。",
+            fallback: "您的浏览器暂不支持视频播放。请升级浏览器以观看 Éclat Intimates 品牌影片。"
+          },
+          footer: {
+            note: "© 2024 Éclat Intimates. 保留所有权利。| 国际精品内衣品牌",
+            contact: "全球贵宾专线：concierge@eclatintimates.com"
+          }
+        },
+        en: {
+          brandName: "Éclat Intimates",
+          toggle: "中文 / EN",
+          hero: {
+            title: "Fearless Glamour, Redefining Intimate Luxury",
+            subtitle:
+              "From Paris to Shanghai, Éclat Intimates infuses couture craftsmanship, intelligent fabrics, and women's empowerment into a global expression of lingerie.",
+            cta: "Discover the New Collection"
+          },
+          features: {
+            title: "Three Promises from Couture Mastery",
+            items: [
+              { title: "Sculpted Tailoring", desc: "3D contouring embraces every curve for the perfect harmony of lift and support." },
+              { title: "Opulent Fabrics", desc: "Handpicked French lace and Italian silk blends deliver featherlight, lasting comfort." },
+              { title: "Adaptive Breathability", desc: "Smart climate control technology responds to your body for all-day ease." }
+            ]
+          },
+          gallery: {
+            title: "Global Muses Embody the Season",
+            subtitle:
+              "Thirteen models from the world's fashion capitals reveal the diverse charisma of Éclat Intimates."
+          },
+          video: {
+            title: "Brand Manifesto",
+            subtitle:
+              "A cinematic tapestry of pink power and noir confidence capturing the authentic stories of Éclat Intimates women—bold, unapologetic, and radiant.",
+            fallback: "Your browser does not support video playback. Please upgrade to view the Éclat Intimates film."
+          },
+          footer: {
+            note: "© 2024 Éclat Intimates. All rights reserved. | Global Luxury Lingerie Maison",
+            contact: "Concierge Worldwide: concierge@eclatintimates.com"
+          }
+        }
+      };
+
+      const langButton = document.querySelector(".language-toggle");
+      const translatable = document.querySelectorAll("[data-i18n]");
+      const ariaTranslate = document.querySelectorAll("[data-i18n-aria-label]");
+      let currentLang = "zh";
+
+      function updateLanguage(lang) {
+        const dict = translations[lang];
+        translatable.forEach((node) => {
+          const path = node.dataset.i18n.split(".");
+          let value = dict;
+          for (const key of path) {
+            value = value?.[key];
+          }
+          if (typeof value === "string") {
+            node.textContent = value;
+          }
+        });
+
+        ariaTranslate.forEach((node) => {
+          const path = node.dataset.i18nAriaLabel.split(".");
+          let value = dict;
+          for (const key of path) {
+            value = value?.[key];
+          }
+          if (typeof value === "string") {
+            node.setAttribute("aria-label", value);
+          }
+        });
+
+        document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+        currentLang = lang;
+        langButton.textContent = dict.toggle;
+      }
+
+      langButton.addEventListener("click", () => {
+        const nextLang = currentLang === "zh" ? "en" : "zh";
+        updateLanguage(nextLang);
+      });
+
+      updateLanguage(currentLang);
+    </script>
   </body>
 </html>

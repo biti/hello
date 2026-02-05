@@ -1,0 +1,2400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仓储物流管理系统 - 库存管理 | 发货 | 多件播种</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--gray-100);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        /* Navigation */
+        .nav {
+            background: white;
+            display: flex;
+            gap: 0;
+            padding: 0 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .nav-item {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: var(--gray-500);
+        }
+
+        .nav-item:hover {
+            color: var(--primary);
+            background: var(--gray-50);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Main Content */
+        .main {
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--gray-300);
+            color: var(--gray-700);
+        }
+
+        .btn-outline:hover {
+            background: var(--gray-50);
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 0.875rem;
+        }
+
+        tr:hover {
+            background: var(--gray-50);
+        }
+
+        /* Badges */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-gray {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-500);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* Seeding specific styles */
+        .seeding-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1.5rem;
+        }
+
+        .seeding-bins {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .seeding-bin {
+            border: 2px dashed var(--gray-300);
+            border-radius: 12px;
+            padding: 1rem;
+            min-height: 200px;
+            transition: all 0.2s;
+        }
+
+        .seeding-bin.active {
+            border-color: var(--primary);
+            border-style: solid;
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .seeding-bin.completed {
+            border-color: var(--success);
+            border-style: solid;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .bin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .bin-id {
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .bin-items {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        .bin-order {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            margin-bottom: 0.5rem;
+        }
+
+        .bin-product {
+            background: var(--gray-100);
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .current-item {
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .current-item-sku {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .current-item-name {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .current-item-qty {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+
+        .scan-input {
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        /* Dashboard stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card-title {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--gray-900);
+        }
+
+        .stat-card-subtitle {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin-top: 0.5rem;
+        }
+
+        /* Inventory low stock highlight */
+        .low-stock {
+            background: #fef2f2;
+        }
+
+        /* Search and filters */
+        .toolbar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-box input {
+            padding-left: 2.5rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-500);
+        }
+
+        /* Checkbox */
+        .checkbox-cell {
+            width: 40px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-500);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        /* Action buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Quantity input */
+        .qty-input {
+            width: 80px;
+            text-align: center;
+        }
+
+        /* Wave list */
+        .wave-item {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .wave-item:hover {
+            border-color: var(--primary);
+        }
+
+        .wave-item.selected {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .wave-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Location display */
+        .location-display {
+            background: var(--warning);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>仓储物流管理系统</h1>
+        <div class="header-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="headerSkuCount">0</div>
+                <div class="stat-label">SKU总数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="headerPendingOrders">0</div>
+                <div class="stat-label">待处理订单</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="headerTodayShipped">0</div>
+                <div class="stat-label">今日发货</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-item active" data-page="dashboard">首页概览</div>
+        <div class="nav-item" data-page="inventory">库存管理</div>
+        <div class="nav-item" data-page="orders">订单管理</div>
+        <div class="nav-item" data-page="shipping">发货管理</div>
+        <div class="nav-item" data-page="seeding">拣货播种</div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="page active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-title">库存SKU总数</div>
+                    <div class="stat-card-value" id="dashSkuCount">0</div>
+                    <div class="stat-card-subtitle">总库存数量: <span id="dashTotalQty">0</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-title">待处理订单</div>
+                    <div class="stat-card-value" id="dashPendingOrders">0</div>
+                    <div class="stat-card-subtitle">等待拣货发货</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-title">今日已发货</div>
+                    <div class="stat-card-value" id="dashShippedToday">0</div>
+                    <div class="stat-card-subtitle">完成订单数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-title">库存预警</div>
+                    <div class="stat-card-value" id="dashLowStock">0</div>
+                    <div class="stat-card-subtitle">库存不足商品</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">最近订单</div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>订单号</th>
+                                    <th>客户</th>
+                                    <th>商品数</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">库存预警商品</div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>商品名称</th>
+                                    <th>当前库存</th>
+                                    <th>预警线</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowStockTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Page -->
+        <div id="inventory" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">库存管理</div>
+                    <button class="btn btn-primary" onclick="showAddProductModal()">+ 添加商品</button>
+                </div>
+                <div class="card-body">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" class="form-input" placeholder="搜索 SKU 或商品名称..." id="inventorySearch" oninput="filterInventory()">
+                        </div>
+                        <select class="form-input" style="width: auto;" id="inventoryFilter" onchange="filterInventory()">
+                            <option value="all">全部商品</option>
+                            <option value="low">库存不足</option>
+                            <option value="normal">库存正常</option>
+                            <option value="high">库存充足</option>
+                        </select>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>商品名称</th>
+                                    <th>库位</th>
+                                    <th>库存数量</th>
+                                    <th>预警线</th>
+                                    <th>单价(元)</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Page -->
+        <div id="orders" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">订单管理</div>
+                    <button class="btn btn-primary" onclick="showAddOrderModal()">+ 创建订单</button>
+                </div>
+                <div class="card-body">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" class="form-input" placeholder="搜索订单号或客户..." id="orderSearch" oninput="filterOrders()">
+                        </div>
+                        <select class="form-input" style="width: auto;" id="orderStatusFilter" onchange="filterOrders()">
+                            <option value="all">全部状态</option>
+                            <option value="pending">待处理</option>
+                            <option value="picking">拣货中</option>
+                            <option value="packed">已打包</option>
+                            <option value="shipped">已发货</option>
+                        </select>
+                        <select class="form-input" style="width: auto;" id="orderShopFilter" onchange="filterOrders()">
+                            <option value="all">全部店铺</option>
+                        </select>
+                        <select class="form-input" style="width: auto;" id="orderCarrierFilterList" onchange="filterOrders()">
+                            <option value="all">全部物流</option>
+                        </select>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-cell"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders()"></th>
+                                    <th>订单号</th>
+                                    <th>店铺</th>
+                                    <th>客户</th>
+                                    <th>物流</th>
+                                    <th>商品明细</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipping Page -->
+        <div id="shipping" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">发货管理</div>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="batchShip()">批量发货</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="toolbar">
+                        <select class="form-input" style="width: auto;" id="shippingFilter" onchange="filterShipping()">
+                            <option value="packed">待发货</option>
+                            <option value="shipped">已发货</option>
+                        </select>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-cell"><input type="checkbox" id="selectAllShipping" onchange="toggleSelectAllShipping()"></th>
+                                    <th>订单号</th>
+                                    <th>客户</th>
+                                    <th>收货地址</th>
+                                    <th>商品数量</th>
+                                    <th>物流单号</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shippingTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seeding Page -->
+        <div id="seeding" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">拣货播种 - 批次管理</div>
+                    <button class="btn btn-primary" onclick="createSeedingWave()">+ 创建拣货批次</button>
+                </div>
+                <div class="card-body" id="seedingWaveList">
+                    <div class="empty-state" id="noWaveMessage">
+                        <div class="empty-state-icon">📦</div>
+                        <div>暂无播种批次，请创建新批次开始播种作业</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seeding Operation Area (hidden by default) -->
+            <div class="card" id="seedingOperationArea" style="display: none;">
+                <div class="card-header">
+                    <div class="card-title">播种作业 - <span id="currentWaveId"></span></div>
+                    <div class="action-buttons">
+                        <button class="btn btn-outline" onclick="endSeedingWave()">结束播种</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="seeding-container">
+                        <!-- Left Panel: Current Item -->
+                        <div>
+                            <div class="current-item" id="currentItemDisplay">
+                                <div>请扫描商品条码开始播种</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">扫描商品条码</label>
+                                <input type="text" class="form-input scan-input" id="scanInput" placeholder="扫描或输入SKU" onkeypress="handleScan(event)">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">待播种商品列表</label>
+                                <div id="pendingItemsList"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Seeding Bins -->
+                        <div>
+                            <div class="form-group">
+                                <label class="form-label">播种进度</label>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="seedingProgress" style="width: 0%"></div>
+                                </div>
+                                <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray-500);">
+                                    已完成: <span id="seedingCompleted">0</span> / <span id="seedingTotal">0</span>
+                                </div>
+                            </div>
+
+                            <div class="seeding-bins" id="seedingBins">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Product Modal -->
+    <div class="modal" id="addProductModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">添加商品</div>
+                <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">SKU编码 *</label>
+                        <input type="text" class="form-input" id="productSku" placeholder="如: SKU001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">商品名称 *</label>
+                        <input type="text" class="form-input" id="productName" placeholder="输入商品名称">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">库位</label>
+                        <input type="text" class="form-input" id="productLocation" placeholder="如: A-01-02">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">初始库存 *</label>
+                        <input type="number" class="form-input" id="productQty" placeholder="0" min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">库存预警线</label>
+                        <input type="number" class="form-input" id="productMinQty" placeholder="10" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">单价(元)</label>
+                        <input type="number" class="form-input" id="productPrice" placeholder="0.00" min="0" step="0.01">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('addProductModal')">取消</button>
+                <button class="btn btn-primary" onclick="addProduct()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div class="modal" id="editProductModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">编辑商品</div>
+                <button class="modal-close" onclick="closeModal('editProductModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editProductId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">SKU编码</label>
+                        <input type="text" class="form-input" id="editProductSku" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">商品名称 *</label>
+                        <input type="text" class="form-input" id="editProductName">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">库位</label>
+                        <input type="text" class="form-input" id="editProductLocation">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">库存数量 *</label>
+                        <input type="number" class="form-input" id="editProductQty" min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">库存预警线</label>
+                        <input type="number" class="form-input" id="editProductMinQty" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">单价(元)</label>
+                        <input type="number" class="form-input" id="editProductPrice" min="0" step="0.01">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('editProductModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveProduct()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Order Modal -->
+    <div class="modal" id="addOrderModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <div class="modal-title">创建订单</div>
+                <button class="modal-close" onclick="closeModal('addOrderModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">店铺 *</label>
+                        <select class="form-input" id="orderShop">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">物流公司 *</label>
+                        <select class="form-input" id="orderCarrier">
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">客户名称 *</label>
+                        <input type="text" class="form-input" id="orderCustomer" placeholder="输入客户名称">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">联系电话</label>
+                        <input type="text" class="form-input" id="orderPhone" placeholder="输入联系电话">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">收货地址 *</label>
+                    <input type="text" class="form-input" id="orderAddress" placeholder="输入详细收货地址">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">订单商品</label>
+                    <div id="orderItemsContainer">
+                        <div class="form-row order-item-row">
+                            <div class="form-group" style="flex: 2;">
+                                <select class="form-input order-item-sku">
+                                    <option value="">选择商品</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <input type="number" class="form-input order-item-qty" placeholder="数量" min="1" value="1">
+                            </div>
+                            <div class="form-group" style="flex: 0;">
+                                <button class="btn btn-danger btn-sm" onclick="removeOrderItem(this)">删除</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="addOrderItem()" style="margin-top: 0.5rem;">+ 添加商品</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('addOrderModal')">取消</button>
+                <button class="btn btn-primary" onclick="createOrder()">创建订单</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipping Modal -->
+    <div class="modal" id="shippingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">发货 - <span id="shippingOrderId"></span></div>
+                <button class="modal-close" onclick="closeModal('shippingModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">物流公司</label>
+                    <select class="form-input" id="shippingCarrier">
+                        <option value="顺丰速运">顺丰速运</option>
+                        <option value="中通快递">中通快递</option>
+                        <option value="圆通速递">圆通速递</option>
+                        <option value="韵达快递">韵达快递</option>
+                        <option value="申通快递">申通快递</option>
+                        <option value="京东物流">京东物流</option>
+                        <option value="邮政EMS">邮政EMS</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">物流单号 *</label>
+                    <input type="text" class="form-input" id="trackingNumber" placeholder="输入物流单号">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('shippingModal')">取消</button>
+                <button class="btn btn-success" onclick="confirmShipping()">确认发货</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Wave Modal -->
+    <div class="modal" id="createWaveModal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <div class="modal-title">创建拣货批次</div>
+                <button class="modal-close" onclick="closeModal('createWaveModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Filter Section -->
+                <div class="card" style="margin-bottom: 1rem; box-shadow: none; border: 1px solid var(--gray-200);">
+                    <div class="card-header" style="padding: 0.75rem 1rem; background: var(--gray-50);">
+                        <div class="card-title" style="font-size: 0.95rem;">筛选条件</div>
+                        <button class="btn btn-sm btn-outline" onclick="resetWaveFilters()">重置</button>
+                    </div>
+                    <div class="card-body" style="padding: 1rem;">
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">订单类型</label>
+                                <select class="form-input" id="waveOrderType" onchange="filterWaveOrders()">
+                                    <option value="all">全部订单</option>
+                                    <option value="single">单品订单 (1个SKU)</option>
+                                    <option value="multi">多品订单 (多个SKU)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">店铺</label>
+                                <select class="form-input" id="waveShopFilter" onchange="filterWaveOrders()">
+                                    <option value="all">全部店铺</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">物流公司</label>
+                                <select class="form-input" id="waveCarrierFilter" onchange="filterWaveOrders()">
+                                    <option value="all">全部物流</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="background: var(--gray-100); padding: 0.75rem 1rem; border-radius: 8px; flex: 1; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);" id="waveFilteredCount">0</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">筛选结果</div>
+                    </div>
+                    <div style="background: var(--gray-100); padding: 0.75rem 1rem; border-radius: 8px; flex: 1; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);" id="waveSelectedCount">0</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">已选订单</div>
+                    </div>
+                    <div style="background: var(--gray-100); padding: 0.75rem 1rem; border-radius: 8px; flex: 1; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning);" id="waveTotalItems">0</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">商品总件数</div>
+                    </div>
+                </div>
+
+                <!-- Select All -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="waveSelectAll" onchange="toggleWaveSelectAll()">
+                        <span style="font-weight: 500;">全选当前筛选结果</span>
+                    </label>
+                    <span style="font-size: 0.875rem; color: var(--gray-500);" id="waveOrderStats"></span>
+                </div>
+
+                <!-- Order List -->
+                <div class="form-group">
+                    <div id="waveOrderList" style="max-height: 350px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('createWaveModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmCreateWave()">创建拣货批次</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============= Data Store =============
+        let data = {
+            products: [],
+            orders: [],
+            waves: [],
+            shops: [],
+            carriers: [],
+            shippedToday: 0
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('warehouseData');
+            if (saved) {
+                data = JSON.parse(saved);
+                // Ensure shops and carriers exist for backward compatibility
+                if (!data.shops) data.shops = getDefaultShops();
+                if (!data.carriers) data.carriers = getDefaultCarriers();
+            } else {
+                // Initialize with sample data
+                initSampleData();
+            }
+            updateAllViews();
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('warehouseData', JSON.stringify(data));
+        }
+
+        // Default shops
+        function getDefaultShops() {
+            return [
+                { id: 'shop1', name: '淘宝旗舰店', platform: '淘宝' },
+                { id: 'shop2', name: '京东自营店', platform: '京东' },
+                { id: 'shop3', name: '拼多多官方店', platform: '拼多多' },
+                { id: 'shop4', name: '抖音小店', platform: '抖音' },
+                { id: 'shop5', name: '微信小程序店', platform: '微信' }
+            ];
+        }
+
+        // Default carriers
+        function getDefaultCarriers() {
+            return [
+                { id: 'sf', name: '顺丰速运', code: 'SF' },
+                { id: 'zt', name: '中通快递', code: 'ZTO' },
+                { id: 'yt', name: '圆通速递', code: 'YTO' },
+                { id: 'yd', name: '韵达快递', code: 'YD' },
+                { id: 'st', name: '申通快递', code: 'STO' },
+                { id: 'jd', name: '京东物流', code: 'JD' },
+                { id: 'ems', name: '邮政EMS', code: 'EMS' },
+                { id: 'jt', name: '极兔速递', code: 'JT' }
+            ];
+        }
+
+        // Initialize sample data
+        function initSampleData() {
+            data.shops = getDefaultShops();
+            data.carriers = getDefaultCarriers();
+
+            data.products = [
+                { id: 1, sku: 'SKU001', name: '无线蓝牙耳机', location: 'A-01-01', qty: 150, minQty: 20, price: 199.00 },
+                { id: 2, sku: 'SKU002', name: '手机保护壳', location: 'A-01-02', qty: 500, minQty: 50, price: 29.90 },
+                { id: 3, sku: 'SKU003', name: 'USB数据线', location: 'A-02-01', qty: 8, minQty: 30, price: 15.00 },
+                { id: 4, sku: 'SKU004', name: '移动电源10000mAh', location: 'B-01-01', qty: 80, minQty: 15, price: 89.00 },
+                { id: 5, sku: 'SKU005', name: '手机支架', location: 'B-01-02', qty: 200, minQty: 30, price: 19.90 },
+                { id: 6, sku: 'SKU006', name: '蓝牙音箱', location: 'C-01-01', qty: 5, minQty: 10, price: 159.00 },
+            ];
+
+            data.orders = [
+                {
+                    id: 'ORD20240101001',
+                    customer: '张三',
+                    phone: '13800138001',
+                    address: '北京市朝阳区建国路100号',
+                    shopId: 'shop1',
+                    carrierId: 'sf',
+                    items: [{ sku: 'SKU001', name: '无线蓝牙耳机', qty: 2 }, { sku: 'SKU002', name: '手机保护壳', qty: 1 }],
+                    status: 'pending',
+                    createdAt: '2024-01-15 10:30:00'
+                },
+                {
+                    id: 'ORD20240101002',
+                    customer: '李四',
+                    phone: '13800138002',
+                    address: '上海市浦东新区陆家嘴金融街88号',
+                    shopId: 'shop2',
+                    carrierId: 'zt',
+                    items: [{ sku: 'SKU003', name: 'USB数据线', qty: 5 }, { sku: 'SKU005', name: '手机支架', qty: 2 }],
+                    status: 'pending',
+                    createdAt: '2024-01-15 11:00:00'
+                },
+                {
+                    id: 'ORD20240101003',
+                    customer: '王五',
+                    phone: '13800138003',
+                    address: '广州市天河区天河路200号',
+                    shopId: 'shop1',
+                    carrierId: 'sf',
+                    items: [{ sku: 'SKU004', name: '移动电源10000mAh', qty: 1 }],
+                    status: 'packed',
+                    createdAt: '2024-01-15 09:00:00'
+                },
+                {
+                    id: 'ORD20240101004',
+                    customer: '赵六',
+                    phone: '13800138004',
+                    address: '深圳市南山区科技园路50号',
+                    shopId: 'shop3',
+                    carrierId: 'jt',
+                    items: [{ sku: 'SKU001', name: '无线蓝牙耳机', qty: 1 }],
+                    status: 'pending',
+                    createdAt: '2024-01-15 12:00:00'
+                },
+                {
+                    id: 'ORD20240101005',
+                    customer: '钱七',
+                    phone: '13800138005',
+                    address: '杭州市西湖区文三路100号',
+                    shopId: 'shop2',
+                    carrierId: 'jd',
+                    items: [{ sku: 'SKU006', name: '蓝牙音箱', qty: 1 }],
+                    status: 'pending',
+                    createdAt: '2024-01-15 13:00:00'
+                },
+                {
+                    id: 'ORD20240101006',
+                    customer: '孙八',
+                    phone: '13800138006',
+                    address: '成都市武侯区天府大道200号',
+                    shopId: 'shop4',
+                    carrierId: 'yt',
+                    items: [{ sku: 'SKU002', name: '手机保护壳', qty: 3 }, { sku: 'SKU003', name: 'USB数据线', qty: 2 }, { sku: 'SKU005', name: '手机支架', qty: 1 }],
+                    status: 'pending',
+                    createdAt: '2024-01-15 14:00:00'
+                }
+            ];
+
+            data.waves = [];
+            data.shippedToday = 3;
+            saveData();
+        }
+
+        // Helper functions
+        function getShopName(shopId) {
+            const shop = data.shops.find(s => s.id === shopId);
+            return shop ? shop.name : '-';
+        }
+
+        function getCarrierName(carrierId) {
+            const carrier = data.carriers.find(c => c.id === carrierId);
+            return carrier ? carrier.name : '-';
+        }
+
+        function getOrderSkuCount(order) {
+            // Count unique SKUs in the order
+            const uniqueSkus = new Set(order.items.map(i => i.sku));
+            return uniqueSkus.size;
+        }
+
+        // ============= Navigation =============
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+                item.classList.add('active');
+                document.getElementById(item.dataset.page).classList.add('active');
+            });
+        });
+
+        // ============= Modal Functions =============
+        function showModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Close modal on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // ============= Update Views =============
+        function updateAllViews() {
+            updateHeaderStats();
+            updateDashboard();
+            updateInventoryTable();
+            updateOrdersTable();
+            updateShippingTable();
+            updateWaveList();
+        }
+
+        function updateHeaderStats() {
+            document.getElementById('headerSkuCount').textContent = data.products.length;
+            document.getElementById('headerPendingOrders').textContent = data.orders.filter(o => o.status === 'pending').length;
+            document.getElementById('headerTodayShipped').textContent = data.shippedToday;
+        }
+
+        function updateDashboard() {
+            document.getElementById('dashSkuCount').textContent = data.products.length;
+            document.getElementById('dashTotalQty').textContent = data.products.reduce((sum, p) => sum + p.qty, 0);
+            document.getElementById('dashPendingOrders').textContent = data.orders.filter(o => o.status === 'pending').length;
+            document.getElementById('dashShippedToday').textContent = data.shippedToday;
+
+            const lowStock = data.products.filter(p => p.qty <= p.minQty);
+            document.getElementById('dashLowStock').textContent = lowStock.length;
+
+            // Recent orders
+            const recentOrders = [...data.orders].slice(-5).reverse();
+            const recentTable = document.getElementById('recentOrdersTable');
+            recentTable.innerHTML = recentOrders.map(order => `
+                <tr>
+                    <td>${order.id}</td>
+                    <td>${order.customer}</td>
+                    <td>${order.items.reduce((sum, i) => sum + i.qty, 0)}</td>
+                    <td>${getStatusBadge(order.status)}</td>
+                    <td>${order.createdAt}</td>
+                </tr>
+            `).join('');
+
+            // Low stock products
+            const lowStockTable = document.getElementById('lowStockTable');
+            if (lowStock.length > 0) {
+                lowStockTable.innerHTML = lowStock.map(p => `
+                    <tr class="low-stock">
+                        <td>${p.sku}</td>
+                        <td>${p.name}</td>
+                        <td><strong style="color: var(--danger);">${p.qty}</strong></td>
+                        <td>${p.minQty}</td>
+                        <td><button class="btn btn-sm btn-warning" onclick="showEditProduct(${p.id})">补货</button></td>
+                    </tr>
+                `).join('');
+            } else {
+                lowStockTable.innerHTML = '<tr><td colspan="5" class="empty-state">暂无库存预警</td></tr>';
+            }
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'pending': '<span class="badge badge-warning">待处理</span>',
+                'picking': '<span class="badge badge-info">拣货中</span>',
+                'packed': '<span class="badge badge-gray">已打包</span>',
+                'shipped': '<span class="badge badge-success">已发货</span>'
+            };
+            return badges[status] || status;
+        }
+
+        // ============= Inventory Functions =============
+        function updateInventoryTable() {
+            const search = document.getElementById('inventorySearch')?.value.toLowerCase() || '';
+            const filter = document.getElementById('inventoryFilter')?.value || 'all';
+
+            let filtered = data.products.filter(p => {
+                const matchSearch = p.sku.toLowerCase().includes(search) || p.name.toLowerCase().includes(search);
+                let matchFilter = true;
+                if (filter === 'low') matchFilter = p.qty <= p.minQty;
+                else if (filter === 'normal') matchFilter = p.qty > p.minQty && p.qty <= p.minQty * 3;
+                else if (filter === 'high') matchFilter = p.qty > p.minQty * 3;
+                return matchSearch && matchFilter;
+            });
+
+            const table = document.getElementById('inventoryTable');
+            table.innerHTML = filtered.map(p => {
+                let statusBadge;
+                if (p.qty <= p.minQty) {
+                    statusBadge = '<span class="badge badge-danger">库存不足</span>';
+                } else if (p.qty <= p.minQty * 3) {
+                    statusBadge = '<span class="badge badge-warning">库存正常</span>';
+                } else {
+                    statusBadge = '<span class="badge badge-success">库存充足</span>';
+                }
+
+                return `
+                    <tr class="${p.qty <= p.minQty ? 'low-stock' : ''}">
+                        <td><strong>${p.sku}</strong></td>
+                        <td>${p.name}</td>
+                        <td>${p.location || '-'}</td>
+                        <td>${p.qty}</td>
+                        <td>${p.minQty}</td>
+                        <td>¥${p.price.toFixed(2)}</td>
+                        <td>${statusBadge}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-outline" onclick="showEditProduct(${p.id})">编辑</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})">删除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterInventory() {
+            updateInventoryTable();
+        }
+
+        function showAddProductModal() {
+            document.getElementById('productSku').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('productLocation').value = '';
+            document.getElementById('productQty').value = '';
+            document.getElementById('productMinQty').value = '10';
+            document.getElementById('productPrice').value = '';
+            showModal('addProductModal');
+        }
+
+        function addProduct() {
+            const sku = document.getElementById('productSku').value.trim();
+            const name = document.getElementById('productName').value.trim();
+            const location = document.getElementById('productLocation').value.trim();
+            const qty = parseInt(document.getElementById('productQty').value) || 0;
+            const minQty = parseInt(document.getElementById('productMinQty').value) || 10;
+            const price = parseFloat(document.getElementById('productPrice').value) || 0;
+
+            if (!sku || !name) {
+                alert('请填写SKU和商品名称');
+                return;
+            }
+
+            if (data.products.some(p => p.sku === sku)) {
+                alert('该SKU已存在');
+                return;
+            }
+
+            const newId = Math.max(...data.products.map(p => p.id), 0) + 1;
+            data.products.push({ id: newId, sku, name, location, qty, minQty, price });
+            saveData();
+            updateAllViews();
+            closeModal('addProductModal');
+        }
+
+        function showEditProduct(id) {
+            const product = data.products.find(p => p.id === id);
+            if (!product) return;
+
+            document.getElementById('editProductId').value = id;
+            document.getElementById('editProductSku').value = product.sku;
+            document.getElementById('editProductName').value = product.name;
+            document.getElementById('editProductLocation').value = product.location;
+            document.getElementById('editProductQty').value = product.qty;
+            document.getElementById('editProductMinQty').value = product.minQty;
+            document.getElementById('editProductPrice').value = product.price;
+            showModal('editProductModal');
+        }
+
+        function saveProduct() {
+            const id = parseInt(document.getElementById('editProductId').value);
+            const product = data.products.find(p => p.id === id);
+            if (!product) return;
+
+            product.name = document.getElementById('editProductName').value.trim();
+            product.location = document.getElementById('editProductLocation').value.trim();
+            product.qty = parseInt(document.getElementById('editProductQty').value) || 0;
+            product.minQty = parseInt(document.getElementById('editProductMinQty').value) || 10;
+            product.price = parseFloat(document.getElementById('editProductPrice').value) || 0;
+
+            saveData();
+            updateAllViews();
+            closeModal('editProductModal');
+        }
+
+        function deleteProduct(id) {
+            if (!confirm('确定要删除该商品吗？')) return;
+            data.products = data.products.filter(p => p.id !== id);
+            saveData();
+            updateAllViews();
+        }
+
+        // ============= Order Functions =============
+        function updateOrdersTable() {
+            // Populate filter dropdowns
+            const shopFilterEl = document.getElementById('orderShopFilter');
+            if (shopFilterEl && shopFilterEl.options.length <= 1) {
+                shopFilterEl.innerHTML = '<option value="all">全部店铺</option>' +
+                    data.shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            }
+
+            const carrierFilterEl = document.getElementById('orderCarrierFilterList');
+            if (carrierFilterEl && carrierFilterEl.options.length <= 1) {
+                carrierFilterEl.innerHTML = '<option value="all">全部物流</option>' +
+                    data.carriers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
+
+            const search = document.getElementById('orderSearch')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
+            const shopFilter = document.getElementById('orderShopFilter')?.value || 'all';
+            const carrierFilter = document.getElementById('orderCarrierFilterList')?.value || 'all';
+
+            let filtered = data.orders.filter(o => {
+                const matchSearch = o.id.toLowerCase().includes(search) || o.customer.toLowerCase().includes(search);
+                const matchStatus = statusFilter === 'all' || o.status === statusFilter;
+                const matchShop = shopFilter === 'all' || o.shopId === shopFilter;
+                const matchCarrier = carrierFilter === 'all' || o.carrierId === carrierFilter;
+                return matchSearch && matchStatus && matchShop && matchCarrier;
+            });
+
+            const table = document.getElementById('ordersTable');
+            table.innerHTML = filtered.map(order => {
+                const skuCount = getOrderSkuCount(order);
+                const orderTypeBadge = skuCount === 1
+                    ? '<span class="badge badge-info" style="font-size: 0.65rem; margin-left: 0.25rem;">单品</span>'
+                    : '<span class="badge badge-warning" style="font-size: 0.65rem; margin-left: 0.25rem;">多品</span>';
+
+                return `
+                    <tr>
+                        <td class="checkbox-cell"><input type="checkbox" class="order-checkbox" value="${order.id}"></td>
+                        <td><strong>${order.id}</strong>${orderTypeBadge}</td>
+                        <td><span class="badge badge-gray" style="font-size: 0.7rem;">${getShopName(order.shopId)}</span></td>
+                        <td>${order.customer}</td>
+                        <td><span class="badge badge-gray" style="font-size: 0.7rem;">${getCarrierName(order.carrierId)}</span></td>
+                        <td style="max-width: 200px;">${order.items.map(i => `${i.name} x${i.qty}`).join('<br>')}</td>
+                        <td>${getStatusBadge(order.status)}</td>
+                        <td class="action-buttons">
+                            ${order.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="startPicking('${order.id}')">拣货</button>` : ''}
+                            ${order.status === 'picking' ? `<button class="btn btn-sm btn-success" onclick="completePacking('${order.id}')">完成打包</button>` : ''}
+                            ${order.status === 'packed' ? `<button class="btn btn-sm btn-success" onclick="showShippingModal('${order.id}')">发货</button>` : ''}
+                            <button class="btn btn-sm btn-outline" onclick="viewOrder('${order.id}')">详情</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterOrders() {
+            updateOrdersTable();
+        }
+
+        function toggleSelectAllOrders() {
+            const checked = document.getElementById('selectAllOrders').checked;
+            document.querySelectorAll('.order-checkbox').forEach(cb => cb.checked = checked);
+        }
+
+        function showAddOrderModal() {
+            document.getElementById('orderCustomer').value = '';
+            document.getElementById('orderPhone').value = '';
+            document.getElementById('orderAddress').value = '';
+
+            // Populate shop dropdown
+            const shopSelect = document.getElementById('orderShop');
+            shopSelect.innerHTML = data.shops.map(s =>
+                `<option value="${s.id}">${s.name} (${s.platform})</option>`
+            ).join('');
+
+            // Populate carrier dropdown
+            const carrierSelect = document.getElementById('orderCarrier');
+            carrierSelect.innerHTML = data.carriers.map(c =>
+                `<option value="${c.id}">${c.name}</option>`
+            ).join('');
+
+            // Reset order items
+            const container = document.getElementById('orderItemsContainer');
+            container.innerHTML = `
+                <div class="form-row order-item-row">
+                    <div class="form-group" style="flex: 2;">
+                        <select class="form-input order-item-sku">
+                            <option value="">选择商品</option>
+                            ${data.products.map(p => `<option value="${p.sku}">${p.sku} - ${p.name} (库存: ${p.qty})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <input type="number" class="form-input order-item-qty" placeholder="数量" min="1" value="1">
+                    </div>
+                    <div class="form-group" style="flex: 0;">
+                        <button class="btn btn-danger btn-sm" onclick="removeOrderItem(this)">删除</button>
+                    </div>
+                </div>
+            `;
+            showModal('addOrderModal');
+        }
+
+        function addOrderItem() {
+            const container = document.getElementById('orderItemsContainer');
+            const row = document.createElement('div');
+            row.className = 'form-row order-item-row';
+            row.innerHTML = `
+                <div class="form-group" style="flex: 2;">
+                    <select class="form-input order-item-sku">
+                        <option value="">选择商品</option>
+                        ${data.products.map(p => `<option value="${p.sku}">${p.sku} - ${p.name} (库存: ${p.qty})</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <input type="number" class="form-input order-item-qty" placeholder="数量" min="1" value="1">
+                </div>
+                <div class="form-group" style="flex: 0;">
+                    <button class="btn btn-danger btn-sm" onclick="removeOrderItem(this)">删除</button>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function removeOrderItem(btn) {
+            const rows = document.querySelectorAll('.order-item-row');
+            if (rows.length > 1) {
+                btn.closest('.order-item-row').remove();
+            }
+        }
+
+        function createOrder() {
+            const shopId = document.getElementById('orderShop').value;
+            const carrierId = document.getElementById('orderCarrier').value;
+            const customer = document.getElementById('orderCustomer').value.trim();
+            const phone = document.getElementById('orderPhone').value.trim();
+            const address = document.getElementById('orderAddress').value.trim();
+
+            if (!customer || !address) {
+                alert('请填写客户名称和收货地址');
+                return;
+            }
+
+            const items = [];
+            document.querySelectorAll('.order-item-row').forEach(row => {
+                const sku = row.querySelector('.order-item-sku').value;
+                const qty = parseInt(row.querySelector('.order-item-qty').value) || 0;
+                if (sku && qty > 0) {
+                    const product = data.products.find(p => p.sku === sku);
+                    if (product) {
+                        items.push({ sku, name: product.name, qty });
+                    }
+                }
+            });
+
+            if (items.length === 0) {
+                alert('请添加至少一件商品');
+                return;
+            }
+
+            const now = new Date();
+            const orderId = 'ORD' + now.getFullYear() +
+                String(now.getMonth() + 1).padStart(2, '0') +
+                String(now.getDate()).padStart(2, '0') +
+                String(data.orders.length + 1).padStart(3, '0');
+
+            data.orders.push({
+                id: orderId,
+                customer,
+                phone,
+                address,
+                shopId,
+                carrierId,
+                items,
+                status: 'pending',
+                createdAt: now.toLocaleString('zh-CN')
+            });
+
+            saveData();
+            updateAllViews();
+            closeModal('addOrderModal');
+        }
+
+        function startPicking(orderId) {
+            const order = data.orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'picking';
+                saveData();
+                updateAllViews();
+            }
+        }
+
+        function completePacking(orderId) {
+            const order = data.orders.find(o => o.id === orderId);
+            if (order) {
+                // Deduct inventory
+                order.items.forEach(item => {
+                    const product = data.products.find(p => p.sku === item.sku);
+                    if (product) {
+                        product.qty = Math.max(0, product.qty - item.qty);
+                    }
+                });
+                order.status = 'packed';
+                saveData();
+                updateAllViews();
+            }
+        }
+
+        function viewOrder(orderId) {
+            const order = data.orders.find(o => o.id === orderId);
+            if (order) {
+                alert(`订单详情\n\n订单号: ${order.id}\n客户: ${order.customer}\n电话: ${order.phone}\n地址: ${order.address}\n\n商品:\n${order.items.map(i => `  ${i.name} x ${i.qty}`).join('\n')}\n\n状态: ${order.status}\n创建时间: ${order.createdAt}`);
+            }
+        }
+
+        // ============= Shipping Functions =============
+        function updateShippingTable() {
+            const statusFilter = document.getElementById('shippingFilter')?.value || 'packed';
+
+            let filtered = data.orders.filter(o => o.status === statusFilter);
+
+            const table = document.getElementById('shippingTable');
+            table.innerHTML = filtered.map(order => `
+                <tr>
+                    <td class="checkbox-cell"><input type="checkbox" class="shipping-checkbox" value="${order.id}"></td>
+                    <td><strong>${order.id}</strong></td>
+                    <td>${order.customer}</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${order.address}</td>
+                    <td>${order.items.reduce((sum, i) => sum + i.qty, 0)}</td>
+                    <td>${order.trackingNumber || '-'}</td>
+                    <td>${getStatusBadge(order.status)}</td>
+                    <td class="action-buttons">
+                        ${order.status === 'packed' ? `<button class="btn btn-sm btn-success" onclick="showShippingModal('${order.id}')">发货</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterShipping() {
+            updateShippingTable();
+        }
+
+        function toggleSelectAllShipping() {
+            const checked = document.getElementById('selectAllShipping').checked;
+            document.querySelectorAll('.shipping-checkbox').forEach(cb => cb.checked = checked);
+        }
+
+        let currentShippingOrderId = null;
+
+        function showShippingModal(orderId) {
+            currentShippingOrderId = orderId;
+            document.getElementById('shippingOrderId').textContent = orderId;
+            document.getElementById('trackingNumber').value = '';
+            showModal('shippingModal');
+        }
+
+        function confirmShipping() {
+            const trackingNumber = document.getElementById('trackingNumber').value.trim();
+            const carrier = document.getElementById('shippingCarrier').value;
+
+            if (!trackingNumber) {
+                alert('请输入物流单号');
+                return;
+            }
+
+            const order = data.orders.find(o => o.id === currentShippingOrderId);
+            if (order) {
+                order.status = 'shipped';
+                order.trackingNumber = trackingNumber;
+                order.carrier = carrier;
+                order.shippedAt = new Date().toLocaleString('zh-CN');
+                data.shippedToday++;
+                saveData();
+                updateAllViews();
+                closeModal('shippingModal');
+            }
+        }
+
+        function batchShip() {
+            const selected = Array.from(document.querySelectorAll('.shipping-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                alert('请选择要发货的订单');
+                return;
+            }
+
+            const trackingPrefix = 'SF' + Date.now();
+            selected.forEach((orderId, index) => {
+                const order = data.orders.find(o => o.id === orderId);
+                if (order && order.status === 'packed') {
+                    order.status = 'shipped';
+                    order.trackingNumber = trackingPrefix + String(index + 1).padStart(4, '0');
+                    order.carrier = '顺丰速运';
+                    order.shippedAt = new Date().toLocaleString('zh-CN');
+                    data.shippedToday++;
+                }
+            });
+
+            saveData();
+            updateAllViews();
+            alert(`成功发货 ${selected.length} 个订单`);
+        }
+
+        // ============= Seeding Functions =============
+        let currentWave = null;
+        let seedingState = {
+            currentItemIndex: 0,
+            scannedItems: [],
+            bins: {}
+        };
+
+        function updateWaveList() {
+            const container = document.getElementById('seedingWaveList');
+            const pendingOrders = data.orders.filter(o => o.status === 'pending').length;
+
+            if (data.waves.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" id="noWaveMessage">
+                        <div class="empty-state-icon">📦</div>
+                        <div>暂无拣货批次</div>
+                        <div style="margin-top: 0.5rem; font-size: 0.875rem;">待处理订单: ${pendingOrders} 个</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = data.waves.map(wave => {
+                    const progress = wave.completedItems ? Math.round(wave.completedItems / wave.totalItems * 100) : 0;
+
+                    // Build filter badges
+                    let filterBadges = '';
+                    if (wave.waveTypeDesc) {
+                        filterBadges += `<span class="badge badge-info" style="font-size: 0.65rem;">${wave.waveTypeDesc}</span>`;
+                    }
+                    if (wave.shopId) {
+                        filterBadges += `<span class="badge badge-gray" style="font-size: 0.65rem;">${getShopName(wave.shopId)}</span>`;
+                    }
+                    if (wave.carrierId) {
+                        filterBadges += `<span class="badge badge-gray" style="font-size: 0.65rem;">${getCarrierName(wave.carrierId)}</span>`;
+                    }
+
+                    return `
+                        <div class="wave-item ${currentWave && currentWave.id === wave.id ? 'selected' : ''}" onclick="selectWave('${wave.id}')">
+                            <div class="wave-info">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <strong>${wave.id}</strong>
+                                        ${filterBadges}
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                        ${wave.orders.length} 个订单 | ${wave.skuCount || Object.keys(wave.pickList).length} 种SKU | ${wave.totalItems} 件商品
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-400);">
+                                        创建: ${wave.createdAt}
+                                    </div>
+                                </div>
+                                <div class="action-buttons">
+                                    ${wave.status === 'pending' ? `<span class="badge badge-warning">待开始</span>` : ''}
+                                    ${wave.status === 'in_progress' ? `<span class="badge badge-info">拣货中</span>` : ''}
+                                    ${wave.status === 'completed' ? `<span class="badge badge-success">已完成</span>` : ''}
+                                    <button class="btn btn-sm btn-danger" onclick="deleteWave('${wave.id}', event)">删除</button>
+                                </div>
+                            </div>
+                            ${wave.status !== 'completed' ? `
+                            <div style="margin-top: 0.75rem;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${progress}%"></div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem;">${progress}% 完成</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function createSeedingWave() {
+            const pendingOrders = data.orders.filter(o => o.status === 'pending');
+            if (pendingOrders.length === 0) {
+                alert('没有待处理的订单');
+                return;
+            }
+
+            // Populate shop filter
+            const shopFilter = document.getElementById('waveShopFilter');
+            shopFilter.innerHTML = '<option value="all">全部店铺</option>' +
+                data.shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+            // Populate carrier filter
+            const carrierFilter = document.getElementById('waveCarrierFilter');
+            carrierFilter.innerHTML = '<option value="all">全部物流</option>' +
+                data.carriers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            // Reset filters
+            document.getElementById('waveOrderType').value = 'all';
+            document.getElementById('waveSelectAll').checked = false;
+
+            showModal('createWaveModal');
+            filterWaveOrders();
+        }
+
+        function resetWaveFilters() {
+            document.getElementById('waveOrderType').value = 'all';
+            document.getElementById('waveShopFilter').value = 'all';
+            document.getElementById('waveCarrierFilter').value = 'all';
+            filterWaveOrders();
+        }
+
+        function filterWaveOrders() {
+            const orderType = document.getElementById('waveOrderType').value;
+            const shopFilter = document.getElementById('waveShopFilter').value;
+            const carrierFilter = document.getElementById('waveCarrierFilter').value;
+
+            let pendingOrders = data.orders.filter(o => o.status === 'pending');
+
+            // Filter by order type
+            if (orderType === 'single') {
+                pendingOrders = pendingOrders.filter(o => getOrderSkuCount(o) === 1);
+            } else if (orderType === 'multi') {
+                pendingOrders = pendingOrders.filter(o => getOrderSkuCount(o) > 1);
+            }
+
+            // Filter by shop
+            if (shopFilter !== 'all') {
+                pendingOrders = pendingOrders.filter(o => o.shopId === shopFilter);
+            }
+
+            // Filter by carrier
+            if (carrierFilter !== 'all') {
+                pendingOrders = pendingOrders.filter(o => o.carrierId === carrierFilter);
+            }
+
+            // Update filtered count
+            document.getElementById('waveFilteredCount').textContent = pendingOrders.length;
+
+            // Render order list
+            const container = document.getElementById('waveOrderList');
+            if (pendingOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 2rem;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📭</div>
+                        <div>没有符合条件的订单</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = pendingOrders.map(order => {
+                    const skuCount = getOrderSkuCount(order);
+                    const totalQty = order.items.reduce((sum, i) => sum + i.qty, 0);
+                    const orderTypeBadge = skuCount === 1
+                        ? '<span class="badge badge-info" style="font-size: 0.65rem;">单品</span>'
+                        : '<span class="badge badge-warning" style="font-size: 0.65rem;">多品</span>';
+
+                    return `
+                        <div class="wave-order-item" style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-200);">
+                            <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer;">
+                                <input type="checkbox" class="wave-order-checkbox" value="${order.id}" onchange="updateWaveStats()">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <strong>${order.id}</strong>
+                                        ${orderTypeBadge}
+                                        <span class="badge badge-gray" style="font-size: 0.65rem;">${getShopName(order.shopId)}</span>
+                                        <span class="badge badge-gray" style="font-size: 0.65rem;">${getCarrierName(order.carrierId)}</span>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--gray-700); margin-top: 0.25rem;">
+                                        ${order.customer} | ${order.address.substring(0, 30)}${order.address.length > 30 ? '...' : ''}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                        ${order.items.map(i => `${i.name} x${i.qty}`).join(', ')}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-400); margin-top: 0.25rem;">
+                                        ${skuCount} 种SKU | ${totalQty} 件商品 | ${order.createdAt}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Update stats display
+            document.getElementById('waveOrderStats').textContent =
+                `共 ${data.orders.filter(o => o.status === 'pending').length} 个待处理订单`;
+
+            updateWaveStats();
+        }
+
+        function toggleWaveSelectAll() {
+            const checked = document.getElementById('waveSelectAll').checked;
+            document.querySelectorAll('.wave-order-checkbox').forEach(cb => cb.checked = checked);
+            updateWaveStats();
+        }
+
+        function updateWaveStats() {
+            const selected = document.querySelectorAll('.wave-order-checkbox:checked');
+            const selectedIds = Array.from(selected).map(cb => cb.value);
+
+            document.getElementById('waveSelectedCount').textContent = selectedIds.length;
+
+            // Calculate total items
+            let totalItems = 0;
+            selectedIds.forEach(orderId => {
+                const order = data.orders.find(o => o.id === orderId);
+                if (order) {
+                    totalItems += order.items.reduce((sum, i) => sum + i.qty, 0);
+                }
+            });
+            document.getElementById('waveTotalItems').textContent = totalItems;
+
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.wave-order-checkbox');
+            const selectAllCb = document.getElementById('waveSelectAll');
+            if (allCheckboxes.length === 0) {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = false;
+            } else if (selectedIds.length === 0) {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = false;
+            } else if (selectedIds.length === allCheckboxes.length) {
+                selectAllCb.checked = true;
+                selectAllCb.indeterminate = false;
+            } else {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = true;
+            }
+        }
+
+        function confirmCreateWave() {
+            const selectedOrders = Array.from(document.querySelectorAll('.wave-order-checkbox:checked')).map(cb => cb.value);
+
+            if (selectedOrders.length === 0) {
+                alert('请选择至少一个订单');
+                return;
+            }
+
+            const waveId = 'WAVE' + Date.now();
+            const orders = selectedOrders.map(id => data.orders.find(o => o.id === id));
+
+            // Get filter info for wave description
+            const orderType = document.getElementById('waveOrderType').value;
+            const shopFilter = document.getElementById('waveShopFilter').value;
+            const carrierFilter = document.getElementById('waveCarrierFilter').value;
+
+            // Calculate total items and create consolidated pick list
+            let totalItems = 0;
+            const pickList = {};
+
+            // Sort pick list by location for optimized picking path
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    if (!pickList[item.sku]) {
+                        const product = data.products.find(p => p.sku === item.sku);
+                        pickList[item.sku] = {
+                            sku: item.sku,
+                            name: item.name,
+                            location: product ? product.location : '',
+                            totalQty: 0,
+                            orders: []
+                        };
+                    }
+                    pickList[item.sku].totalQty += item.qty;
+                    pickList[item.sku].orders.push({ orderId: order.id, qty: item.qty });
+                    totalItems += item.qty;
+                });
+            });
+
+            // Sort by location for optimized picking
+            const sortedPickList = Object.values(pickList).sort((a, b) => {
+                return (a.location || 'ZZZ').localeCompare(b.location || 'ZZZ');
+            });
+
+            // Determine wave type description
+            let waveTypeDesc = '';
+            if (orderType === 'single') waveTypeDesc = '单品订单';
+            else if (orderType === 'multi') waveTypeDesc = '多品订单';
+            else waveTypeDesc = '混合订单';
+
+            const wave = {
+                id: waveId,
+                orders: selectedOrders,
+                pickList: sortedPickList,
+                totalItems,
+                completedItems: 0,
+                status: 'pending',
+                createdAt: new Date().toLocaleString('zh-CN'),
+                // Additional metadata
+                orderType: orderType,
+                shopId: shopFilter !== 'all' ? shopFilter : null,
+                carrierId: carrierFilter !== 'all' ? carrierFilter : null,
+                waveTypeDesc: waveTypeDesc,
+                skuCount: Object.keys(pickList).length
+            };
+
+            data.waves.push(wave);
+
+            // Update order status
+            selectedOrders.forEach(orderId => {
+                const order = data.orders.find(o => o.id === orderId);
+                if (order) order.status = 'picking';
+            });
+
+            saveData();
+            updateAllViews();
+            closeModal('createWaveModal');
+
+            // Auto-select the new wave
+            selectWave(waveId);
+        }
+
+        function selectWave(waveId) {
+            const wave = data.waves.find(w => w.id === waveId);
+            if (!wave || wave.status === 'completed') return;
+
+            currentWave = wave;
+            wave.status = 'in_progress';
+
+            // Initialize seeding state
+            seedingState = {
+                currentItemIndex: 0,
+                scannedItems: [],
+                bins: {}
+            };
+
+            // Initialize bins for each order
+            wave.orders.forEach(orderId => {
+                seedingState.bins[orderId] = {
+                    items: [],
+                    completed: false
+                };
+            });
+
+            saveData();
+            updateWaveList();
+            showSeedingOperation();
+        }
+
+        function showSeedingOperation() {
+            document.getElementById('seedingOperationArea').style.display = 'block';
+            document.getElementById('currentWaveId').textContent = currentWave.id;
+
+            updateSeedingDisplay();
+            updateSeedingBins();
+            document.getElementById('scanInput').focus();
+        }
+
+        function updateSeedingDisplay() {
+            const display = document.getElementById('currentItemDisplay');
+            const pendingList = document.getElementById('pendingItemsList');
+            const progress = document.getElementById('seedingProgress');
+            const completed = document.getElementById('seedingCompleted');
+            const total = document.getElementById('seedingTotal');
+
+            // Update progress
+            const completedCount = currentWave.completedItems;
+            const totalCount = currentWave.totalItems;
+            progress.style.width = `${totalCount > 0 ? (completedCount / totalCount * 100) : 0}%`;
+            completed.textContent = completedCount;
+            total.textContent = totalCount;
+
+            // Find current item to pick
+            const currentItem = currentWave.pickList.find(item => {
+                const scannedQty = seedingState.scannedItems.filter(s => s.sku === item.sku).length;
+                return scannedQty < item.totalQty;
+            });
+
+            if (currentItem) {
+                const scannedQty = seedingState.scannedItems.filter(s => s.sku === currentItem.sku).length;
+                const remainingQty = currentItem.totalQty - scannedQty;
+
+                display.innerHTML = `
+                    <div class="location-display" style="background: var(--warning);">库位: ${currentItem.location || '未设置'}</div>
+                    <div class="current-item-sku">${currentItem.sku}</div>
+                    <div class="current-item-name">${currentItem.name}</div>
+                    <div class="current-item-qty">需拣: ${remainingQty}</div>
+                    <div style="font-size: 0.875rem; opacity: 0.8;">已扫: ${scannedQty} / ${currentItem.totalQty}</div>
+                `;
+            } else {
+                display.innerHTML = `
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">✅ 播种完成</div>
+                    <div>所有商品已分拣完毕</div>
+                `;
+            }
+
+            // Update pending items list
+            pendingList.innerHTML = currentWave.pickList.map(item => {
+                const scannedQty = seedingState.scannedItems.filter(s => s.sku === item.sku).length;
+                const isComplete = scannedQty >= item.totalQty;
+                const isCurrent = currentItem && currentItem.sku === item.sku;
+
+                return `
+                    <div class="bin-product" style="${isCurrent ? 'background: var(--primary); color: white;' : ''} ${isComplete ? 'opacity: 0.5; text-decoration: line-through;' : ''}">
+                        <strong>${item.sku}</strong> - ${item.name}
+                        <div style="font-size: 0.75rem;">${scannedQty} / ${item.totalQty} | 库位: ${item.location || '-'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateSeedingBins() {
+            const container = document.getElementById('seedingBins');
+
+            container.innerHTML = currentWave.orders.map(orderId => {
+                const order = data.orders.find(o => o.id === orderId);
+                const binState = seedingState.bins[orderId];
+                const orderItems = order.items;
+
+                // Check completion
+                let isComplete = true;
+                orderItems.forEach(item => {
+                    const binItemQty = binState.items.filter(i => i.sku === item.sku).length;
+                    if (binItemQty < item.qty) isComplete = false;
+                });
+                binState.completed = isComplete;
+
+                return `
+                    <div class="seeding-bin ${isComplete ? 'completed' : ''}">
+                        <div class="bin-header">
+                            <span class="bin-id">${orderId}</span>
+                            ${isComplete ? '<span class="badge badge-success">完成</span>' : ''}
+                        </div>
+                        <div class="bin-order">${order.customer}</div>
+                        <div class="bin-items">需要: ${orderItems.map(i => `${i.name} x${i.qty}`).join(', ')}</div>
+                        <hr style="margin: 0.5rem 0; border: none; border-top: 1px dashed var(--gray-300);">
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">已分拣:</div>
+                        ${binState.items.length > 0 ? binState.items.reduce((acc, item) => {
+                            const existing = acc.find(a => a.sku === item.sku);
+                            if (existing) {
+                                existing.qty++;
+                            } else {
+                                acc.push({ sku: item.sku, name: item.name, qty: 1 });
+                            }
+                            return acc;
+                        }, []).map(item => `
+                            <div class="bin-product">${item.name} x${item.qty}</div>
+                        `).join('') : '<div style="color: var(--gray-400); font-size: 0.75rem;">暂无</div>'}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleScan(event) {
+            if (event.key !== 'Enter') return;
+
+            const input = document.getElementById('scanInput');
+            const scannedSku = input.value.trim().toUpperCase();
+            input.value = '';
+
+            if (!scannedSku) return;
+
+            // Find the item in pick list
+            const pickItem = currentWave.pickList.find(item => item.sku.toUpperCase() === scannedSku);
+            if (!pickItem) {
+                alert('该商品不在本批次播种清单中');
+                return;
+            }
+
+            // Check if we still need this item
+            const scannedQty = seedingState.scannedItems.filter(s => s.sku === pickItem.sku).length;
+            if (scannedQty >= pickItem.totalQty) {
+                alert('该商品已全部分拣完成');
+                return;
+            }
+
+            // Find which order needs this item
+            let targetOrder = null;
+            for (const orderAlloc of pickItem.orders) {
+                const binItems = seedingState.bins[orderAlloc.orderId].items.filter(i => i.sku === pickItem.sku);
+                if (binItems.length < orderAlloc.qty) {
+                    targetOrder = orderAlloc.orderId;
+                    break;
+                }
+            }
+
+            if (!targetOrder) {
+                alert('所有订单该商品已分拣完成');
+                return;
+            }
+
+            // Add to bin
+            seedingState.bins[targetOrder].items.push({
+                sku: pickItem.sku,
+                name: pickItem.name
+            });
+            seedingState.scannedItems.push({
+                sku: pickItem.sku,
+                orderId: targetOrder
+            });
+            currentWave.completedItems++;
+
+            // Flash the target bin
+            const bins = document.querySelectorAll('.seeding-bin');
+            const binIndex = currentWave.orders.indexOf(targetOrder);
+            if (bins[binIndex]) {
+                bins[binIndex].classList.add('active');
+                setTimeout(() => bins[binIndex].classList.remove('active'), 500);
+            }
+
+            saveData();
+            updateSeedingDisplay();
+            updateSeedingBins();
+
+            // Check if wave is complete
+            if (currentWave.completedItems >= currentWave.totalItems) {
+                setTimeout(() => {
+                    alert('播种完成！所有商品已分拣到对应订单。');
+                }, 100);
+            }
+        }
+
+        function endSeedingWave() {
+            if (!currentWave) return;
+
+            // Check if all items are seeded
+            if (currentWave.completedItems < currentWave.totalItems) {
+                if (!confirm('播种尚未完成，确定要结束吗？')) return;
+            }
+
+            // Update order status based on completion
+            currentWave.orders.forEach(orderId => {
+                const binState = seedingState.bins[orderId];
+                const order = data.orders.find(o => o.id === orderId);
+                if (order && binState.completed) {
+                    // Deduct inventory
+                    order.items.forEach(item => {
+                        const product = data.products.find(p => p.sku === item.sku);
+                        if (product) {
+                            product.qty = Math.max(0, product.qty - item.qty);
+                        }
+                    });
+                    order.status = 'packed';
+                }
+            });
+
+            currentWave.status = 'completed';
+            currentWave = null;
+
+            document.getElementById('seedingOperationArea').style.display = 'none';
+
+            saveData();
+            updateAllViews();
+        }
+
+        function deleteWave(waveId, event) {
+            event.stopPropagation();
+            if (!confirm('确定要删除此播种批次吗？')) return;
+
+            const wave = data.waves.find(w => w.id === waveId);
+            if (wave && wave.status !== 'completed') {
+                // Reset order status
+                wave.orders.forEach(orderId => {
+                    const order = data.orders.find(o => o.id === orderId);
+                    if (order && order.status === 'picking') {
+                        order.status = 'pending';
+                    }
+                });
+            }
+
+            data.waves = data.waves.filter(w => w.id !== waveId);
+
+            if (currentWave && currentWave.id === waveId) {
+                currentWave = null;
+                document.getElementById('seedingOperationArea').style.display = 'none';
+            }
+
+            saveData();
+            updateAllViews();
+        }
+
+        // ============= Initialize =============
+        loadData();
+    </script>
+</body>
+</html>

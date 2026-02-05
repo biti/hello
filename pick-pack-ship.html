@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick-Pack-Ship 发货作业系统 | SkuVault Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --purple: #8b5cf6;
+            --purple-light: #ede9fe;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--gray-100);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--gray-900);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .header-nav-item {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--gray-400);
+            transition: all 0.2s;
+        }
+
+        .header-nav-item:hover {
+            color: white;
+            background: var(--gray-800);
+        }
+
+        .header-nav-item.active {
+            color: white;
+            background: var(--primary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 52px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid var(--gray-200);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .sidebar-title {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.75rem;
+        }
+
+        .sidebar-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .sidebar-stat {
+            text-align: center;
+            padding: 0.5rem;
+            background: var(--gray-50);
+            border-radius: 6px;
+        }
+
+        .sidebar-stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .sidebar-stat-label {
+            font-size: 0.65rem;
+            color: var(--gray-500);
+            text-transform: uppercase;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .wave-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .wave-card {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .wave-card:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .wave-card.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        .wave-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .wave-id {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .wave-status {
+            padding: 0.125rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 500;
+        }
+
+        .wave-status.pending { background: var(--warning-light); color: #92400e; }
+        .wave-status.picking { background: var(--primary-light); color: var(--primary-dark); }
+        .wave-status.packing { background: var(--purple-light); color: var(--purple); }
+        .wave-status.shipping { background: var(--success-light); color: #065f46; }
+        .wave-status.completed { background: var(--gray-200); color: var(--gray-600); }
+
+        .wave-info {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        .wave-progress {
+            margin-top: 0.5rem;
+            height: 4px;
+            background: var(--gray-200);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .wave-progress-bar {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Workflow Steps */
+        .workflow-steps {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 1rem;
+        }
+
+        .workflow-step {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .workflow-step:hover {
+            background: var(--gray-50);
+        }
+
+        .workflow-step.active {
+            border-bottom-color: var(--primary);
+        }
+
+        .workflow-step.completed {
+            border-bottom-color: var(--success);
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            background: var(--gray-200);
+            color: var(--gray-600);
+        }
+
+        .workflow-step.active .step-number {
+            background: var(--primary);
+            color: white;
+        }
+
+        .workflow-step.completed .step-number {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+
+        .step-subtitle {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        /* Work Area */
+        .work-area {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: var(--gray-100);
+        }
+
+        .work-panel {
+            display: none;
+            height: 100%;
+        }
+
+        .work-panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Pick Panel */
+        .pick-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        .pick-list-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .pick-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .pick-item:hover {
+            background: var(--gray-50);
+        }
+
+        .pick-item.current {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .pick-item.completed {
+            background: var(--success-light);
+            opacity: 0.7;
+        }
+
+        .pick-item-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--gray-300);
+            margin-right: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pick-item.completed .pick-item-checkbox {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .pick-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pick-item-sku {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--gray-900);
+        }
+
+        .pick-item-name {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pick-item-qty {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+            margin-left: 0.5rem;
+        }
+
+        .pick-item.completed .pick-item-qty {
+            color: var(--success);
+        }
+
+        /* Current Pick Display */
+        .current-pick-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .location-banner {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .location-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-bottom: 0.25rem;
+        }
+
+        .location-value {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+
+        .current-pick-content {
+            flex: 1;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .current-sku {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .current-name {
+            font-size: 1.25rem;
+            color: var(--gray-600);
+            margin-bottom: 1.5rem;
+        }
+
+        .current-qty-display {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .qty-box {
+            text-align: center;
+        }
+
+        .qty-label {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .qty-value {
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .qty-value.need { color: var(--primary); }
+        .qty-value.picked { color: var(--success); }
+
+        .qty-separator {
+            font-size: 2rem;
+            color: var(--gray-400);
+        }
+
+        .scan-section {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .scan-input-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .scan-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            font-size: 1.25rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .scan-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .scan-input.success {
+            border-color: var(--success);
+            background: var(--success-light);
+        }
+
+        .scan-input.error {
+            border-color: var(--danger);
+            background: var(--danger-light);
+        }
+
+        .scan-hint {
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--gray-300);
+            color: var(--gray-700);
+        }
+
+        .btn-outline:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+        }
+
+        .btn-lg {
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        /* Pack Panel */
+        .pack-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            align-content: start;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .order-card:hover {
+            border-color: var(--primary);
+        }
+
+        .order-card.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .order-card.packed {
+            border-color: var(--success);
+            background: var(--success-light);
+        }
+
+        .order-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .order-id {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .order-items-count {
+            background: var(--gray-200);
+            padding: 0.125rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .order-card.packed .order-items-count {
+            background: var(--success);
+            color: white;
+        }
+
+        .order-customer {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            margin-bottom: 0.25rem;
+        }
+
+        .order-address {
+            font-size: 0.7rem;
+            color: var(--gray-500);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Pack Detail Panel */
+        .pack-detail-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pack-order-info {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .pack-order-id {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .pack-customer-info {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .pack-items-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .pack-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .pack-item.scanned {
+            background: var(--success-light);
+        }
+
+        .pack-item-status {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--gray-300);
+            margin-right: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pack-item.scanned .pack-item-status {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .pack-item-info {
+            flex: 1;
+        }
+
+        .pack-item-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .pack-item-sku {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        .pack-item-qty {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .pack-actions {
+            padding: 1rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .weight-input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .weight-input {
+            flex: 1;
+            padding: 0.625rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .weight-unit {
+            padding: 0.625rem 1rem;
+            background: var(--gray-100);
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        /* Ship Panel */
+        .ship-container {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        .ship-queue {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ship-queue-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .ship-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-100);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ship-item:hover {
+            background: var(--gray-50);
+        }
+
+        .ship-item.active {
+            background: var(--primary-light);
+        }
+
+        .ship-item.shipped {
+            background: var(--success-light);
+            opacity: 0.7;
+        }
+
+        .ship-item-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gray-300);
+            border-radius: 4px;
+            margin-right: 1rem;
+            cursor: pointer;
+        }
+
+        .ship-item-checkbox.checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .ship-item-info {
+            flex: 1;
+        }
+
+        .ship-item-id {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .ship-item-detail {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        .ship-item-carrier {
+            padding: 0.25rem 0.5rem;
+            background: var(--gray-200);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Ship Detail Panel */
+        .ship-detail-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shipping-form {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .tracking-preview {
+            background: var(--gray-50);
+            border: 1px dashed var(--gray-300);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .tracking-label {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            margin-bottom: 0.5rem;
+        }
+
+        .tracking-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: monospace;
+            letter-spacing: 0.05em;
+        }
+
+        .print-button {
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        /* QC Panel */
+        .qc-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        .qc-items-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .qc-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .qc-item-status {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .qc-item-status.pass {
+            background: var(--success-light);
+        }
+
+        .qc-item-status.fail {
+            background: var(--danger-light);
+        }
+
+        .qc-item-status.pending {
+            background: var(--gray-200);
+        }
+
+        .qc-stats-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+        }
+
+        .qc-stat-card {
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .qc-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .qc-stat-label {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        /* Badges */
+        .badge {
+            padding: 0.25rem 0.625rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge-success { background: var(--success-light); color: #065f46; }
+        .badge-warning { background: var(--warning-light); color: #92400e; }
+        .badge-danger { background: var(--danger-light); color: #991b1b; }
+        .badge-info { background: var(--primary-light); color: var(--primary-dark); }
+        .badge-gray { background: var(--gray-200); color: var(--gray-700); }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--gray-500);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Keyboard Shortcuts */
+        .kbd {
+            background: var(--gray-200);
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: monospace;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.warning { background: var(--warning); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-500);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">SkuVault</div>
+            <div class="header-nav">
+                <div class="header-nav-item active">发货作业</div>
+                <div class="header-nav-item" onclick="window.location.href='warehouse.html'">仓库管理</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-info">
+                <div class="user-avatar">A</div>
+                <span>管理员</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">今日发货概览</div>
+                <div class="sidebar-stats">
+                    <div class="sidebar-stat">
+                        <div class="sidebar-stat-value" id="statPending">0</div>
+                        <div class="sidebar-stat-label">待处理</div>
+                    </div>
+                    <div class="sidebar-stat">
+                        <div class="sidebar-stat-value" id="statProcessing">0</div>
+                        <div class="sidebar-stat-label">处理中</div>
+                    </div>
+                    <div class="sidebar-stat">
+                        <div class="sidebar-stat-value" id="statCompleted">0</div>
+                        <div class="sidebar-stat-label">已完成</div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <span style="font-weight: 600; font-size: 0.875rem;">拣货批次</span>
+                    <button class="btn btn-sm btn-primary" onclick="showCreateWaveModal()">+ 新建</button>
+                </div>
+                <div class="wave-list" id="waveList">
+                    <!-- Wave cards will be rendered here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Workflow Steps -->
+            <div class="workflow-steps">
+                <div class="workflow-step active" data-step="pick" onclick="switchStep('pick')">
+                    <div class="step-number">1</div>
+                    <div class="step-info">
+                        <div class="step-title">Pick 拣货</div>
+                        <div class="step-subtitle">扫描拣货</div>
+                    </div>
+                </div>
+                <div class="workflow-step" data-step="pack" onclick="switchStep('pack')">
+                    <div class="step-number">2</div>
+                    <div class="step-info">
+                        <div class="step-title">Pack 打包</div>
+                        <div class="step-subtitle">验货装箱</div>
+                    </div>
+                </div>
+                <div class="workflow-step" data-step="ship" onclick="switchStep('ship')">
+                    <div class="step-number">3</div>
+                    <div class="step-info">
+                        <div class="step-title">Ship 发货</div>
+                        <div class="step-subtitle">打印运单</div>
+                    </div>
+                </div>
+                <div class="workflow-step" data-step="qc" onclick="switchStep('qc')">
+                    <div class="step-number">4</div>
+                    <div class="step-info">
+                        <div class="step-title">QC 质检</div>
+                        <div class="step-subtitle">质量控制</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Work Area -->
+            <div class="work-area">
+                <!-- Pick Panel -->
+                <div class="work-panel active" id="pickPanel">
+                    <div class="pick-container">
+                        <!-- Pick List -->
+                        <div class="pick-list-panel">
+                            <div class="panel-header">
+                                <div class="panel-title">拣货清单</div>
+                                <span class="badge badge-info" id="pickProgress">0/0</span>
+                            </div>
+                            <div class="panel-body" id="pickList">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📦</div>
+                                    <div>请选择一个拣货批次</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Pick -->
+                        <div class="current-pick-panel">
+                            <div class="location-banner">
+                                <div class="location-label">前往库位</div>
+                                <div class="location-value" id="currentLocation">--</div>
+                            </div>
+                            <div class="current-pick-content" id="currentPickContent">
+                                <div class="empty-state">
+                                    <div class="empty-icon">🎯</div>
+                                    <div>选择批次开始拣货</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pack Panel -->
+                <div class="work-panel" id="packPanel">
+                    <div class="pack-container">
+                        <!-- Orders Grid -->
+                        <div style="overflow-y: auto;">
+                            <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600;">待打包订单</span>
+                                <span class="badge badge-info" id="packProgress">0/0</span>
+                            </div>
+                            <div class="orders-grid" id="packOrdersGrid">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📦</div>
+                                    <div>暂无待打包订单</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pack Detail -->
+                        <div class="pack-detail-panel" id="packDetailPanel">
+                            <div class="empty-state" style="flex: 1;">
+                                <div class="empty-icon">👆</div>
+                                <div>选择订单开始打包</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ship Panel -->
+                <div class="work-panel" id="shipPanel">
+                    <div class="ship-container">
+                        <!-- Ship Queue -->
+                        <div class="ship-queue">
+                            <div class="panel-header">
+                                <div class="panel-title">待发货队列</div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-sm btn-outline" onclick="selectAllShipItems()">全选</button>
+                                    <button class="btn btn-sm btn-success" onclick="batchShip()">批量发货</button>
+                                </div>
+                            </div>
+                            <div class="ship-queue-list" id="shipQueueList">
+                                <div class="empty-state">
+                                    <div class="empty-icon">🚚</div>
+                                    <div>暂无待发货订单</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ship Detail -->
+                        <div class="ship-detail-panel" id="shipDetailPanel">
+                            <div class="empty-state" style="flex: 1;">
+                                <div class="empty-icon">📋</div>
+                                <div>选择订单查看发货详情</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QC Panel -->
+                <div class="work-panel" id="qcPanel">
+                    <div class="qc-container">
+                        <div class="qc-items-panel">
+                            <div class="panel-header">
+                                <div class="panel-title">质检记录</div>
+                                <select class="form-select" style="width: auto;" id="qcFilter" onchange="filterQCItems()">
+                                    <option value="all">全部</option>
+                                    <option value="pass">通过</option>
+                                    <option value="fail">异常</option>
+                                </select>
+                            </div>
+                            <div class="panel-body" id="qcItemsList">
+                                <div class="empty-state">
+                                    <div class="empty-icon">✅</div>
+                                    <div>暂无质检记录</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="qc-stats-panel">
+                            <h3 style="margin-bottom: 1rem;">质检统计</h3>
+                            <div class="qc-stat-card">
+                                <div class="qc-stat-value" style="color: var(--success);" id="qcPassRate">100%</div>
+                                <div class="qc-stat-label">合格率</div>
+                            </div>
+                            <div class="qc-stat-card">
+                                <div class="qc-stat-value" id="qcTotalChecked">0</div>
+                                <div class="qc-stat-label">已检查</div>
+                            </div>
+                            <div class="qc-stat-card">
+                                <div class="qc-stat-value" style="color: var(--danger);" id="qcFailCount">0</div>
+                                <div class="qc-stat-label">异常数</div>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <h4 style="font-size: 0.875rem; margin-bottom: 0.5rem;">常见问题</h4>
+                                <div id="qcIssuesList" style="font-size: 0.8rem; color: var(--gray-600);">
+                                    暂无数据
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Wave Modal -->
+    <div class="modal-overlay" id="createWaveModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <div class="modal-title">创建拣货批次</div>
+                <button class="modal-close" onclick="closeModal('createWaveModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label">订单类型</label>
+                        <select class="form-select" id="waveOrderType" onchange="filterWaveOrders()">
+                            <option value="all">全部</option>
+                            <option value="single">单品订单</option>
+                            <option value="multi">多品订单</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label">店铺</label>
+                        <select class="form-select" id="waveShop" onchange="filterWaveOrders()">
+                            <option value="all">全部店铺</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label">物流</label>
+                        <select class="form-select" id="waveCarrier" onchange="filterWaveOrders()">
+                            <option value="all">全部物流</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="selectAllWaveOrders" onchange="toggleSelectAllWaveOrders()">
+                        <span style="font-size: 0.875rem;">全选</span>
+                    </label>
+                    <span style="font-size: 0.875rem; color: var(--gray-500);">
+                        已选 <strong id="selectedWaveCount">0</strong> 个订单
+                    </span>
+                </div>
+                <div id="waveOrdersList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('createWaveModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmCreateWave()">创建批次</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QC Issue Modal -->
+    <div class="modal-overlay" id="qcIssueModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">标记质检问题</div>
+                <button class="modal-close" onclick="closeModal('qcIssueModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">问题类型</label>
+                    <select class="form-select" id="qcIssueType">
+                        <option value="wrong_item">商品错误</option>
+                        <option value="damaged">商品损坏</option>
+                        <option value="missing">商品缺失</option>
+                        <option value="wrong_qty">数量错误</option>
+                        <option value="packaging">包装问题</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">问题描述</label>
+                    <textarea class="form-input" id="qcIssueDesc" rows="3" placeholder="请描述具体问题..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('qcIssueModal')">取消</button>
+                <button class="btn btn-danger" onclick="confirmQCIssue()">确认标记</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============= Data Store =============
+        let appData = {
+            products: [],
+            orders: [],
+            waves: [],
+            shops: [],
+            carriers: [],
+            qcRecords: [],
+            shippedToday: 0
+        };
+
+        let currentWave = null;
+        let currentPickIndex = 0;
+        let pickingState = {};
+        let currentPackOrder = null;
+        let currentShipOrder = null;
+
+        // ============= Initialize =============
+        function init() {
+            loadData();
+            updateStats();
+            renderWaveList();
+            setupKeyboardShortcuts();
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('warehouseData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                appData.products = data.products || [];
+                appData.orders = data.orders || [];
+                appData.waves = data.waves || [];
+                appData.shops = data.shops || getDefaultShops();
+                appData.carriers = data.carriers || getDefaultCarriers();
+                appData.shippedToday = data.shippedToday || 0;
+            } else {
+                initSampleData();
+            }
+            appData.qcRecords = JSON.parse(localStorage.getItem('qcRecords') || '[]');
+        }
+
+        function saveData() {
+            localStorage.setItem('warehouseData', JSON.stringify({
+                products: appData.products,
+                orders: appData.orders,
+                waves: appData.waves,
+                shops: appData.shops,
+                carriers: appData.carriers,
+                shippedToday: appData.shippedToday
+            }));
+            localStorage.setItem('qcRecords', JSON.stringify(appData.qcRecords));
+        }
+
+        function getDefaultShops() {
+            return [
+                { id: 'shop1', name: '淘宝旗舰店' },
+                { id: 'shop2', name: '京东自营店' },
+                { id: 'shop3', name: '拼多多官方店' },
+                { id: 'shop4', name: '抖音小店' }
+            ];
+        }
+
+        function getDefaultCarriers() {
+            return [
+                { id: 'sf', name: '顺丰速运', code: 'SF' },
+                { id: 'zt', name: '中通快递', code: 'ZTO' },
+                { id: 'yt', name: '圆通速递', code: 'YTO' },
+                { id: 'jd', name: '京东物流', code: 'JD' }
+            ];
+        }
+
+        function initSampleData() {
+            appData.shops = getDefaultShops();
+            appData.carriers = getDefaultCarriers();
+            appData.products = [
+                { id: 1, sku: 'SKU001', name: '无线蓝牙耳机', location: 'A-01-01', qty: 150, price: 199 },
+                { id: 2, sku: 'SKU002', name: '手机保护壳', location: 'A-01-02', qty: 500, price: 29.9 },
+                { id: 3, sku: 'SKU003', name: 'USB数据线', location: 'A-02-01', qty: 80, price: 15 },
+                { id: 4, sku: 'SKU004', name: '移动电源', location: 'B-01-01', qty: 60, price: 89 },
+                { id: 5, sku: 'SKU005', name: '手机支架', location: 'B-01-02', qty: 200, price: 19.9 }
+            ];
+            appData.orders = [
+                { id: 'ORD001', customer: '张三', phone: '138****1001', address: '北京市朝阳区xxx', shopId: 'shop1', carrierId: 'sf', items: [{ sku: 'SKU001', name: '无线蓝牙耳机', qty: 2 }], status: 'pending', createdAt: new Date().toLocaleString() },
+                { id: 'ORD002', customer: '李四', phone: '138****1002', address: '上海市浦东新区xxx', shopId: 'shop2', carrierId: 'jd', items: [{ sku: 'SKU002', name: '手机保护壳', qty: 3 }, { sku: 'SKU003', name: 'USB数据线', qty: 2 }], status: 'pending', createdAt: new Date().toLocaleString() },
+                { id: 'ORD003', customer: '王五', phone: '138****1003', address: '广州市天河区xxx', shopId: 'shop1', carrierId: 'zt', items: [{ sku: 'SKU004', name: '移动电源', qty: 1 }], status: 'pending', createdAt: new Date().toLocaleString() },
+                { id: 'ORD004', customer: '赵六', phone: '138****1004', address: '深圳市南山区xxx', shopId: 'shop3', carrierId: 'yt', items: [{ sku: 'SKU001', name: '无线蓝牙耳机', qty: 1 }, { sku: 'SKU005', name: '手机支架', qty: 2 }], status: 'pending', createdAt: new Date().toLocaleString() },
+                { id: 'ORD005', customer: '钱七', phone: '138****1005', address: '杭州市西湖区xxx', shopId: 'shop4', carrierId: 'sf', items: [{ sku: 'SKU005', name: '手机支架', qty: 1 }], status: 'pending', createdAt: new Date().toLocaleString() }
+            ];
+            saveData();
+        }
+
+        // ============= UI Updates =============
+        function updateStats() {
+            const pending = appData.orders.filter(o => o.status === 'pending').length;
+            const processing = appData.orders.filter(o => ['picking', 'picked', 'packing', 'packed'].includes(o.status)).length;
+            const completed = appData.orders.filter(o => o.status === 'shipped').length;
+
+            document.getElementById('statPending').textContent = pending;
+            document.getElementById('statProcessing').textContent = processing;
+            document.getElementById('statCompleted').textContent = completed;
+        }
+
+        function renderWaveList() {
+            const container = document.getElementById('waveList');
+            if (appData.waves.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 1rem;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                        <div style="font-size: 0.8rem;">暂无批次</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = appData.waves.map(wave => {
+                const progress = wave.totalItems > 0 ? Math.round((wave.completedItems || 0) / wave.totalItems * 100) : 0;
+                const statusMap = {
+                    'pending': '待拣货',
+                    'picking': '拣货中',
+                    'picked': '已拣货',
+                    'packing': '打包中',
+                    'packed': '已打包',
+                    'shipping': '发货中',
+                    'completed': '已完成'
+                };
+
+                return `
+                    <div class="wave-card ${currentWave && currentWave.id === wave.id ? 'active' : ''}" onclick="selectWave('${wave.id}')">
+                        <div class="wave-card-header">
+                            <span class="wave-id">${wave.id}</span>
+                            <span class="wave-status ${wave.status}">${statusMap[wave.status] || wave.status}</span>
+                        </div>
+                        <div class="wave-info">${wave.orders.length} 订单 · ${wave.totalItems} 件</div>
+                        <div class="wave-progress">
+                            <div class="wave-progress-bar" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============= Step Navigation =============
+        function switchStep(step) {
+            document.querySelectorAll('.workflow-step').forEach(s => s.classList.remove('active'));
+            document.querySelector(`[data-step="${step}"]`).classList.add('active');
+
+            document.querySelectorAll('.work-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`${step}Panel`).classList.add('active');
+
+            if (step === 'pack') renderPackPanel();
+            if (step === 'ship') renderShipPanel();
+            if (step === 'qc') renderQCPanel();
+        }
+
+        // ============= Wave Management =============
+        function showCreateWaveModal() {
+            // Populate dropdowns
+            document.getElementById('waveShop').innerHTML = '<option value="all">全部店铺</option>' +
+                appData.shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            document.getElementById('waveCarrier').innerHTML = '<option value="all">全部物流</option>' +
+                appData.carriers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            filterWaveOrders();
+            openModal('createWaveModal');
+        }
+
+        function filterWaveOrders() {
+            const orderType = document.getElementById('waveOrderType').value;
+            const shopId = document.getElementById('waveShop').value;
+            const carrierId = document.getElementById('waveCarrier').value;
+
+            let orders = appData.orders.filter(o => o.status === 'pending');
+
+            if (orderType === 'single') {
+                orders = orders.filter(o => new Set(o.items.map(i => i.sku)).size === 1);
+            } else if (orderType === 'multi') {
+                orders = orders.filter(o => new Set(o.items.map(i => i.sku)).size > 1);
+            }
+
+            if (shopId !== 'all') {
+                orders = orders.filter(o => o.shopId === shopId);
+            }
+
+            if (carrierId !== 'all') {
+                orders = orders.filter(o => o.carrierId === carrierId);
+            }
+
+            renderWaveOrdersList(orders);
+        }
+
+        function renderWaveOrdersList(orders) {
+            const container = document.getElementById('waveOrdersList');
+            if (orders.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 1rem;">没有符合条件的订单</div>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => {
+                const shop = appData.shops.find(s => s.id === order.shopId);
+                const carrier = appData.carriers.find(c => c.id === order.carrierId);
+                const itemCount = order.items.reduce((sum, i) => sum + i.qty, 0);
+
+                return `
+                    <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center;">
+                        <input type="checkbox" class="wave-order-cb" value="${order.id}" onchange="updateWaveSelection()" style="margin-right: 0.75rem;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <strong style="font-size: 0.875rem;">${order.id}</strong>
+                                <span class="badge badge-gray">${shop?.name || '-'}</span>
+                                <span class="badge badge-gray">${carrier?.name || '-'}</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                ${order.customer} · ${itemCount} 件 · ${order.items.map(i => i.name).join(', ')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleSelectAllWaveOrders() {
+            const checked = document.getElementById('selectAllWaveOrders').checked;
+            document.querySelectorAll('.wave-order-cb').forEach(cb => cb.checked = checked);
+            updateWaveSelection();
+        }
+
+        function updateWaveSelection() {
+            const selected = document.querySelectorAll('.wave-order-cb:checked').length;
+            document.getElementById('selectedWaveCount').textContent = selected;
+        }
+
+        function confirmCreateWave() {
+            const selectedIds = Array.from(document.querySelectorAll('.wave-order-cb:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) {
+                showToast('请选择至少一个订单', 'warning');
+                return;
+            }
+
+            const waveId = 'W' + Date.now().toString().slice(-6);
+            const orders = selectedIds.map(id => appData.orders.find(o => o.id === id));
+
+            // Build pick list
+            const pickList = {};
+            let totalItems = 0;
+
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    if (!pickList[item.sku]) {
+                        const product = appData.products.find(p => p.sku === item.sku);
+                        pickList[item.sku] = {
+                            sku: item.sku,
+                            name: item.name,
+                            location: product?.location || '',
+                            totalQty: 0,
+                            pickedQty: 0,
+                            orders: []
+                        };
+                    }
+                    pickList[item.sku].totalQty += item.qty;
+                    pickList[item.sku].orders.push({ orderId: order.id, qty: item.qty });
+                    totalItems += item.qty;
+                });
+            });
+
+            // Sort by location
+            const sortedPickList = Object.values(pickList).sort((a, b) =>
+                (a.location || 'ZZZ').localeCompare(b.location || 'ZZZ')
+            );
+
+            const wave = {
+                id: waveId,
+                orders: selectedIds,
+                pickList: sortedPickList,
+                totalItems,
+                completedItems: 0,
+                status: 'pending',
+                createdAt: new Date().toLocaleString()
+            };
+
+            appData.waves.push(wave);
+
+            // Update order status
+            selectedIds.forEach(id => {
+                const order = appData.orders.find(o => o.id === id);
+                if (order) order.status = 'picking';
+            });
+
+            saveData();
+            updateStats();
+            renderWaveList();
+            closeModal('createWaveModal');
+            selectWave(waveId);
+            showToast('拣货批次创建成功', 'success');
+        }
+
+        function selectWave(waveId) {
+            currentWave = appData.waves.find(w => w.id === waveId);
+            if (!currentWave) return;
+
+            currentPickIndex = 0;
+            pickingState = {};
+
+            // Initialize picking state
+            currentWave.pickList.forEach(item => {
+                pickingState[item.sku] = { picked: item.pickedQty || 0 };
+            });
+
+            renderWaveList();
+            renderPickList();
+            renderCurrentPick();
+            switchStep('pick');
+        }
+
+        // ============= Pick Functions =============
+        function renderPickList() {
+            if (!currentWave) return;
+
+            const container = document.getElementById('pickList');
+            const totalItems = currentWave.pickList.reduce((sum, item) => sum + item.totalQty, 0);
+            const pickedItems = currentWave.pickList.reduce((sum, item) => sum + (pickingState[item.sku]?.picked || 0), 0);
+
+            document.getElementById('pickProgress').textContent = `${pickedItems}/${totalItems}`;
+
+            container.innerHTML = currentWave.pickList.map((item, index) => {
+                const picked = pickingState[item.sku]?.picked || 0;
+                const isComplete = picked >= item.totalQty;
+                const isCurrent = index === currentPickIndex;
+
+                return `
+                    <div class="pick-item ${isCurrent ? 'current' : ''} ${isComplete ? 'completed' : ''}" onclick="setCurrentPick(${index})">
+                        <div class="pick-item-checkbox">${isComplete ? '✓' : ''}</div>
+                        <div class="pick-item-info">
+                            <div class="pick-item-sku">${item.sku}</div>
+                            <div class="pick-item-name">${item.name}</div>
+                            <div style="font-size: 0.65rem; color: var(--gray-400);">${item.location}</div>
+                        </div>
+                        <div class="pick-item-qty">${picked}/${item.totalQty}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setCurrentPick(index) {
+            currentPickIndex = index;
+            renderPickList();
+            renderCurrentPick();
+        }
+
+        function renderCurrentPick() {
+            if (!currentWave || !currentWave.pickList[currentPickIndex]) {
+                document.getElementById('currentLocation').textContent = '--';
+                document.getElementById('currentPickContent').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">✅</div>
+                        <div>拣货完成!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const item = currentWave.pickList[currentPickIndex];
+            const picked = pickingState[item.sku]?.picked || 0;
+            const remaining = item.totalQty - picked;
+
+            document.getElementById('currentLocation').textContent = item.location || '--';
+
+            document.getElementById('currentPickContent').innerHTML = `
+                <div class="current-sku">${item.sku}</div>
+                <div class="current-name">${item.name}</div>
+                <div class="current-qty-display">
+                    <div class="qty-box">
+                        <div class="qty-label">需拣</div>
+                        <div class="qty-value need">${remaining}</div>
+                    </div>
+                    <div class="qty-separator">/</div>
+                    <div class="qty-box">
+                        <div class="qty-label">已拣</div>
+                        <div class="qty-value picked">${picked}</div>
+                    </div>
+                </div>
+                <div class="scan-section">
+                    <div class="scan-input-container">
+                        <input type="text" class="scan-input" id="pickScanInput" placeholder="扫描商品条码" onkeypress="handlePickScan(event)" autofocus>
+                    </div>
+                    <div class="scan-hint">扫描 <strong>${item.sku}</strong> 或按 <kbd class="kbd">Enter</kbd> 确认</div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-outline" onclick="skipCurrentPick()">跳过</button>
+                    <button class="btn btn-primary btn-lg" onclick="confirmPick()">确认拣货 (+1)</button>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const input = document.getElementById('pickScanInput');
+                if (input) input.focus();
+            }, 100);
+        }
+
+        function handlePickScan(event) {
+            if (event.key !== 'Enter') return;
+
+            const input = document.getElementById('pickScanInput');
+            const scanned = input.value.trim().toUpperCase();
+            input.value = '';
+
+            if (!scanned) {
+                confirmPick();
+                return;
+            }
+
+            const item = currentWave.pickList[currentPickIndex];
+            if (scanned === item.sku.toUpperCase()) {
+                confirmPick();
+                input.classList.add('success');
+                setTimeout(() => input.classList.remove('success'), 300);
+            } else {
+                input.classList.add('error', 'shake');
+                setTimeout(() => input.classList.remove('error', 'shake'), 300);
+                showToast('条码不匹配', 'error');
+            }
+        }
+
+        function confirmPick() {
+            if (!currentWave) return;
+
+            const item = currentWave.pickList[currentPickIndex];
+            const picked = pickingState[item.sku]?.picked || 0;
+
+            if (picked < item.totalQty) {
+                pickingState[item.sku].picked = picked + 1;
+                currentWave.completedItems = (currentWave.completedItems || 0) + 1;
+
+                // Update pickList
+                item.pickedQty = pickingState[item.sku].picked;
+
+                // Check if current item is complete
+                if (pickingState[item.sku].picked >= item.totalQty) {
+                    // Move to next item
+                    const nextIndex = currentWave.pickList.findIndex((p, i) =>
+                        i > currentPickIndex && (pickingState[p.sku]?.picked || 0) < p.totalQty
+                    );
+
+                    if (nextIndex !== -1) {
+                        currentPickIndex = nextIndex;
+                    } else {
+                        // Check if all items are picked
+                        const allPicked = currentWave.pickList.every(p =>
+                            (pickingState[p.sku]?.picked || 0) >= p.totalQty
+                        );
+
+                        if (allPicked) {
+                            currentWave.status = 'picked';
+                            // Update order status
+                            currentWave.orders.forEach(orderId => {
+                                const order = appData.orders.find(o => o.id === orderId);
+                                if (order) order.status = 'picked';
+                            });
+                            showToast('拣货完成! 请进入打包环节', 'success');
+                        }
+                    }
+                }
+
+                saveData();
+                renderPickList();
+                renderCurrentPick();
+                renderWaveList();
+            }
+        }
+
+        function skipCurrentPick() {
+            const nextIndex = currentWave.pickList.findIndex((p, i) =>
+                i > currentPickIndex && (pickingState[p.sku]?.picked || 0) < p.totalQty
+            );
+
+            if (nextIndex !== -1) {
+                currentPickIndex = nextIndex;
+                renderPickList();
+                renderCurrentPick();
+            }
+        }
+
+        // ============= Pack Functions =============
+        function renderPackPanel() {
+            const packableOrders = appData.orders.filter(o => ['picked', 'packing'].includes(o.status));
+            const packedOrders = appData.orders.filter(o => o.status === 'packed');
+
+            document.getElementById('packProgress').textContent = `${packedOrders.length}/${packableOrders.length + packedOrders.length}`;
+
+            const grid = document.getElementById('packOrdersGrid');
+            if (packableOrders.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">📦</div>
+                        <div>暂无待打包订单</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem;">请先完成拣货</div>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = packableOrders.map(order => {
+                const itemCount = order.items.reduce((sum, i) => sum + i.qty, 0);
+                const isPacked = order.status === 'packed';
+                const isActive = currentPackOrder && currentPackOrder.id === order.id;
+
+                return `
+                    <div class="order-card ${isActive ? 'active' : ''} ${isPacked ? 'packed' : ''}" onclick="selectPackOrder('${order.id}')">
+                        <div class="order-card-header">
+                            <span class="order-id">${order.id}</span>
+                            <span class="order-items-count">${itemCount} 件</span>
+                        </div>
+                        <div class="order-customer">${order.customer}</div>
+                        <div class="order-address">${order.address}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectPackOrder(orderId) {
+            currentPackOrder = appData.orders.find(o => o.id === orderId);
+            if (!currentPackOrder) return;
+
+            currentPackOrder.status = 'packing';
+            currentPackOrder.packState = currentPackOrder.packState || {};
+
+            saveData();
+            renderPackPanel();
+            renderPackDetail();
+        }
+
+        function renderPackDetail() {
+            if (!currentPackOrder) return;
+
+            const carrier = appData.carriers.find(c => c.id === currentPackOrder.carrierId);
+            const allScanned = currentPackOrder.items.every(item =>
+                (currentPackOrder.packState?.[item.sku] || 0) >= item.qty
+            );
+
+            document.getElementById('packDetailPanel').innerHTML = `
+                <div class="pack-order-info">
+                    <div class="pack-order-id">${currentPackOrder.id}</div>
+                    <div class="pack-customer-info">
+                        <div>${currentPackOrder.customer} · ${currentPackOrder.phone}</div>
+                        <div style="color: var(--gray-500); font-size: 0.8rem;">${currentPackOrder.address}</div>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="badge badge-gray">${carrier?.name || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding: 1rem; border-bottom: 1px solid var(--gray-200);">
+                    <input type="text" class="scan-input" id="packScanInput" placeholder="扫描商品条码验证" onkeypress="handlePackScan(event)" style="font-size: 1rem; padding: 0.75rem;">
+                </div>
+                <div class="pack-items-list">
+                    ${currentPackOrder.items.map(item => {
+                        const scanned = currentPackOrder.packState?.[item.sku] || 0;
+                        const isScanned = scanned >= item.qty;
+                        return `
+                            <div class="pack-item ${isScanned ? 'scanned' : ''}">
+                                <div class="pack-item-status">${isScanned ? '✓' : ''}</div>
+                                <div class="pack-item-info">
+                                    <div class="pack-item-name">${item.name}</div>
+                                    <div class="pack-item-sku">${item.sku}</div>
+                                </div>
+                                <div class="pack-item-qty">${scanned}/${item.qty}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="pack-actions">
+                    <div class="weight-input-group">
+                        <input type="number" class="weight-input" id="packageWeight" placeholder="包裹重量" step="0.01">
+                        <span class="weight-unit">kg</span>
+                    </div>
+                    <button class="btn btn-success btn-lg" style="width: 100%;" onclick="confirmPack()" ${!allScanned ? 'disabled style="opacity: 0.5;"' : ''}>
+                        ${allScanned ? '确认打包完成' : '请先扫描所有商品'}
+                    </button>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const input = document.getElementById('packScanInput');
+                if (input) input.focus();
+            }, 100);
+        }
+
+        function handlePackScan(event) {
+            if (event.key !== 'Enter') return;
+
+            const input = document.getElementById('packScanInput');
+            const scanned = input.value.trim().toUpperCase();
+            input.value = '';
+
+            if (!scanned || !currentPackOrder) return;
+
+            const item = currentPackOrder.items.find(i => i.sku.toUpperCase() === scanned);
+            if (item) {
+                const current = currentPackOrder.packState?.[item.sku] || 0;
+                if (current < item.qty) {
+                    currentPackOrder.packState = currentPackOrder.packState || {};
+                    currentPackOrder.packState[item.sku] = current + 1;
+                    saveData();
+                    renderPackDetail();
+                    showToast(`${item.name} 验证成功`, 'success');
+                } else {
+                    showToast('该商品已全部验证', 'warning');
+                }
+            } else {
+                showToast('商品不在此订单中', 'error');
+            }
+        }
+
+        function confirmPack() {
+            if (!currentPackOrder) return;
+
+            const allScanned = currentPackOrder.items.every(item =>
+                (currentPackOrder.packState?.[item.sku] || 0) >= item.qty
+            );
+
+            if (!allScanned) {
+                showToast('请先扫描验证所有商品', 'warning');
+                return;
+            }
+
+            currentPackOrder.status = 'packed';
+            currentPackOrder.weight = document.getElementById('packageWeight')?.value || 0;
+
+            // Add QC record
+            appData.qcRecords.push({
+                orderId: currentPackOrder.id,
+                status: 'pass',
+                timestamp: new Date().toLocaleString(),
+                items: currentPackOrder.items.length
+            });
+
+            saveData();
+            showToast('打包完成', 'success');
+            currentPackOrder = null;
+            renderPackPanel();
+            document.getElementById('packDetailPanel').innerHTML = `
+                <div class="empty-state" style="flex: 1;">
+                    <div class="empty-icon">✅</div>
+                    <div>打包完成，选择下一个订单</div>
+                </div>
+            `;
+        }
+
+        // ============= Ship Functions =============
+        function renderShipPanel() {
+            const shippableOrders = appData.orders.filter(o => o.status === 'packed');
+
+            const list = document.getElementById('shipQueueList');
+            if (shippableOrders.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🚚</div>
+                        <div>暂无待发货订单</div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = shippableOrders.map(order => {
+                const carrier = appData.carriers.find(c => c.id === order.carrierId);
+                const itemCount = order.items.reduce((sum, i) => sum + i.qty, 0);
+                const isActive = currentShipOrder && currentShipOrder.id === order.id;
+
+                return `
+                    <div class="ship-item ${isActive ? 'active' : ''}" onclick="selectShipOrder('${order.id}')">
+                        <input type="checkbox" class="ship-item-checkbox" value="${order.id}" onclick="event.stopPropagation()">
+                        <div class="ship-item-info">
+                            <div class="ship-item-id">${order.id}</div>
+                            <div class="ship-item-detail">${order.customer} · ${itemCount} 件 · ${order.weight || '-'}kg</div>
+                        </div>
+                        <span class="ship-item-carrier">${carrier?.name || '-'}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectShipOrder(orderId) {
+            currentShipOrder = appData.orders.find(o => o.id === orderId);
+            if (!currentShipOrder) return;
+
+            renderShipPanel();
+            renderShipDetail();
+        }
+
+        function renderShipDetail() {
+            if (!currentShipOrder) return;
+
+            const carrier = appData.carriers.find(c => c.id === currentShipOrder.carrierId);
+            const trackingNumber = currentShipOrder.trackingNumber || generateTrackingNumber(carrier?.code || 'XX');
+
+            document.getElementById('shipDetailPanel').innerHTML = `
+                <div class="panel-header">
+                    <div class="panel-title">发货详情 - ${currentShipOrder.id}</div>
+                </div>
+                <div class="shipping-form">
+                    <div class="form-group">
+                        <label class="form-label">收件人</label>
+                        <input type="text" class="form-input" value="${currentShipOrder.customer}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">收货地址</label>
+                        <input type="text" class="form-input" value="${currentShipOrder.address}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">物流公司</label>
+                        <select class="form-select" id="shipCarrier">
+                            ${appData.carriers.map(c => `
+                                <option value="${c.id}" ${c.id === currentShipOrder.carrierId ? 'selected' : ''}>${c.name}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">运单号</label>
+                        <input type="text" class="form-input" id="shipTrackingNumber" value="${trackingNumber}">
+                    </div>
+                    <div class="tracking-preview">
+                        <div class="tracking-label">运单号预览</div>
+                        <div class="tracking-number" id="trackingPreview">${trackingNumber}</div>
+                    </div>
+                    <button class="btn btn-primary btn-lg print-button" onclick="printLabel()">
+                        🖨️ 打印运单
+                    </button>
+                    <button class="btn btn-success btn-lg print-button" onclick="confirmShip()" style="margin-top: 0.5rem;">
+                        确认发货
+                    </button>
+                </div>
+            `;
+        }
+
+        function generateTrackingNumber(prefix) {
+            return prefix + Date.now().toString().slice(-10) + Math.random().toString(36).slice(-4).toUpperCase();
+        }
+
+        function printLabel() {
+            showToast('运单打印中...', 'success');
+            // Simulate print
+            setTimeout(() => showToast('运单打印完成', 'success'), 1000);
+        }
+
+        function confirmShip() {
+            if (!currentShipOrder) return;
+
+            const trackingNumber = document.getElementById('shipTrackingNumber').value;
+            const carrierId = document.getElementById('shipCarrier').value;
+
+            currentShipOrder.status = 'shipped';
+            currentShipOrder.trackingNumber = trackingNumber;
+            currentShipOrder.carrierId = carrierId;
+            currentShipOrder.shippedAt = new Date().toLocaleString();
+
+            // Deduct inventory
+            currentShipOrder.items.forEach(item => {
+                const product = appData.products.find(p => p.sku === item.sku);
+                if (product) {
+                    product.qty = Math.max(0, product.qty - item.qty);
+                }
+            });
+
+            appData.shippedToday++;
+
+            saveData();
+            updateStats();
+            showToast('发货成功', 'success');
+            currentShipOrder = null;
+            renderShipPanel();
+            document.getElementById('shipDetailPanel').innerHTML = `
+                <div class="empty-state" style="flex: 1;">
+                    <div class="empty-icon">✅</div>
+                    <div>发货完成</div>
+                </div>
+            `;
+        }
+
+        function selectAllShipItems() {
+            document.querySelectorAll('.ship-item-checkbox').forEach(cb => cb.checked = true);
+        }
+
+        function batchShip() {
+            const selected = Array.from(document.querySelectorAll('.ship-item-checkbox:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast('请选择要发货的订单', 'warning');
+                return;
+            }
+
+            selected.forEach(orderId => {
+                const order = appData.orders.find(o => o.id === orderId);
+                if (order) {
+                    const carrier = appData.carriers.find(c => c.id === order.carrierId);
+                    order.status = 'shipped';
+                    order.trackingNumber = generateTrackingNumber(carrier?.code || 'XX');
+                    order.shippedAt = new Date().toLocaleString();
+
+                    order.items.forEach(item => {
+                        const product = appData.products.find(p => p.sku === item.sku);
+                        if (product) {
+                            product.qty = Math.max(0, product.qty - item.qty);
+                        }
+                    });
+
+                    appData.shippedToday++;
+                }
+            });
+
+            saveData();
+            updateStats();
+            renderShipPanel();
+            showToast(`${selected.length} 个订单已发货`, 'success');
+        }
+
+        // ============= QC Functions =============
+        function renderQCPanel() {
+            const records = appData.qcRecords.slice(-50).reverse();
+            const passCount = records.filter(r => r.status === 'pass').length;
+            const failCount = records.filter(r => r.status === 'fail').length;
+
+            document.getElementById('qcPassRate').textContent = records.length > 0
+                ? Math.round(passCount / records.length * 100) + '%'
+                : '100%';
+            document.getElementById('qcTotalChecked').textContent = records.length;
+            document.getElementById('qcFailCount').textContent = failCount;
+
+            const list = document.getElementById('qcItemsList');
+            if (records.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">✅</div>
+                        <div>暂无质检记录</div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = records.map(record => `
+                <div class="qc-item">
+                    <div class="qc-item-status ${record.status}">
+                        ${record.status === 'pass' ? '✓' : '✗'}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">${record.orderId}</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">
+                            ${record.timestamp} · ${record.items} 件
+                        </div>
+                        ${record.issue ? `<div style="font-size: 0.75rem; color: var(--danger);">${record.issue}</div>` : ''}
+                    </div>
+                    <span class="badge ${record.status === 'pass' ? 'badge-success' : 'badge-danger'}">
+                        ${record.status === 'pass' ? '通过' : '异常'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function filterQCItems() {
+            // Implement filtering if needed
+            renderQCPanel();
+        }
+
+        // ============= Utility Functions =============
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+                }
+
+                // Quick step switching with number keys
+                if (!e.target.matches('input, textarea, select')) {
+                    if (e.key === '1') switchStep('pick');
+                    if (e.key === '2') switchStep('pack');
+                    if (e.key === '3') switchStep('ship');
+                    if (e.key === '4') switchStep('qc');
+                }
+            });
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

@@ -622,7 +622,7 @@
         <div class="nav-item" data-page="inventory">库存管理</div>
         <div class="nav-item" data-page="orders">订单管理</div>
         <div class="nav-item" data-page="shipping">发货管理</div>
-        <div class="nav-item" data-page="seeding">多件播种</div>
+        <div class="nav-item" data-page="seeding">拣货播种</div>
     </nav>
 
     <!-- Main Content -->
@@ -761,6 +761,12 @@
                             <option value="packed">已打包</option>
                             <option value="shipped">已发货</option>
                         </select>
+                        <select class="form-input" style="width: auto;" id="orderShopFilter" onchange="filterOrders()">
+                            <option value="all">全部店铺</option>
+                        </select>
+                        <select class="form-input" style="width: auto;" id="orderCarrierFilterList" onchange="filterOrders()">
+                            <option value="all">全部物流</option>
+                        </select>
                     </div>
                     <div class="table-container">
                         <table>
@@ -768,11 +774,11 @@
                                 <tr>
                                     <th class="checkbox-cell"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders()"></th>
                                     <th>订单号</th>
+                                    <th>店铺</th>
                                     <th>客户</th>
-                                    <th>收货地址</th>
+                                    <th>物流</th>
                                     <th>商品明细</th>
                                     <th>状态</th>
-                                    <th>创建时间</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
@@ -826,8 +832,8 @@
         <div id="seeding" class="page">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">多件播种 - 批次管理</div>
-                    <button class="btn btn-primary" onclick="createSeedingWave()">+ 创建播种批次</button>
+                    <div class="card-title">拣货播种 - 批次管理</div>
+                    <button class="btn btn-primary" onclick="createSeedingWave()">+ 创建拣货批次</button>
                 </div>
                 <div class="card-body" id="seedingWaveList">
                     <div class="empty-state" id="noWaveMessage">
@@ -988,6 +994,18 @@
             <div class="modal-body">
                 <div class="form-row">
                     <div class="form-group">
+                        <label class="form-label">店铺 *</label>
+                        <select class="form-input" id="orderShop">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">物流公司 *</label>
+                        <select class="form-input" id="orderCarrier">
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
                         <label class="form-label">客户名称 *</label>
                         <input type="text" class="form-input" id="orderCustomer" placeholder="输入客户名称">
                     </div>
@@ -1061,21 +1079,78 @@
 
     <!-- Create Wave Modal -->
     <div class="modal" id="createWaveModal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
-                <div class="modal-title">创建播种批次</div>
+                <div class="modal-title">创建拣货批次</div>
                 <button class="modal-close" onclick="closeModal('createWaveModal')">&times;</button>
             </div>
             <div class="modal-body">
+                <!-- Filter Section -->
+                <div class="card" style="margin-bottom: 1rem; box-shadow: none; border: 1px solid var(--gray-200);">
+                    <div class="card-header" style="padding: 0.75rem 1rem; background: var(--gray-50);">
+                        <div class="card-title" style="font-size: 0.95rem;">筛选条件</div>
+                        <button class="btn btn-sm btn-outline" onclick="resetWaveFilters()">重置</button>
+                    </div>
+                    <div class="card-body" style="padding: 1rem;">
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">订单类型</label>
+                                <select class="form-input" id="waveOrderType" onchange="filterWaveOrders()">
+                                    <option value="all">全部订单</option>
+                                    <option value="single">单品订单 (1个SKU)</option>
+                                    <option value="multi">多品订单 (多个SKU)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">店铺</label>
+                                <select class="form-input" id="waveShopFilter" onchange="filterWaveOrders()">
+                                    <option value="all">全部店铺</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">物流公司</label>
+                                <select class="form-input" id="waveCarrierFilter" onchange="filterWaveOrders()">
+                                    <option value="all">全部物流</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="background: var(--gray-100); padding: 0.75rem 1rem; border-radius: 8px; flex: 1; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);" id="waveFilteredCount">0</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">筛选结果</div>
+                    </div>
+                    <div style="background: var(--gray-100); padding: 0.75rem 1rem; border-radius: 8px; flex: 1; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);" id="waveSelectedCount">0</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">已选订单</div>
+                    </div>
+                    <div style="background: var(--gray-100); padding: 0.75rem 1rem; border-radius: 8px; flex: 1; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning);" id="waveTotalItems">0</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">商品总件数</div>
+                    </div>
+                </div>
+
+                <!-- Select All -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="waveSelectAll" onchange="toggleWaveSelectAll()">
+                        <span style="font-weight: 500;">全选当前筛选结果</span>
+                    </label>
+                    <span style="font-size: 0.875rem; color: var(--gray-500);" id="waveOrderStats"></span>
+                </div>
+
+                <!-- Order List -->
                 <div class="form-group">
-                    <label class="form-label">选择待处理订单（可多选）</label>
-                    <div id="waveOrderList" style="max-height: 400px; overflow-y: auto;">
+                    <div id="waveOrderList" style="max-height: 350px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('createWaveModal')">取消</button>
-                <button class="btn btn-primary" onclick="confirmCreateWave()">创建批次</button>
+                <button class="btn btn-primary" onclick="confirmCreateWave()">创建拣货批次</button>
             </div>
         </div>
     </div>
@@ -1086,6 +1161,8 @@
             products: [],
             orders: [],
             waves: [],
+            shops: [],
+            carriers: [],
             shippedToday: 0
         };
 
@@ -1094,6 +1171,9 @@
             const saved = localStorage.getItem('warehouseData');
             if (saved) {
                 data = JSON.parse(saved);
+                // Ensure shops and carriers exist for backward compatibility
+                if (!data.shops) data.shops = getDefaultShops();
+                if (!data.carriers) data.carriers = getDefaultCarriers();
             } else {
                 // Initialize with sample data
                 initSampleData();
@@ -1106,8 +1186,36 @@
             localStorage.setItem('warehouseData', JSON.stringify(data));
         }
 
+        // Default shops
+        function getDefaultShops() {
+            return [
+                { id: 'shop1', name: '淘宝旗舰店', platform: '淘宝' },
+                { id: 'shop2', name: '京东自营店', platform: '京东' },
+                { id: 'shop3', name: '拼多多官方店', platform: '拼多多' },
+                { id: 'shop4', name: '抖音小店', platform: '抖音' },
+                { id: 'shop5', name: '微信小程序店', platform: '微信' }
+            ];
+        }
+
+        // Default carriers
+        function getDefaultCarriers() {
+            return [
+                { id: 'sf', name: '顺丰速运', code: 'SF' },
+                { id: 'zt', name: '中通快递', code: 'ZTO' },
+                { id: 'yt', name: '圆通速递', code: 'YTO' },
+                { id: 'yd', name: '韵达快递', code: 'YD' },
+                { id: 'st', name: '申通快递', code: 'STO' },
+                { id: 'jd', name: '京东物流', code: 'JD' },
+                { id: 'ems', name: '邮政EMS', code: 'EMS' },
+                { id: 'jt', name: '极兔速递', code: 'JT' }
+            ];
+        }
+
         // Initialize sample data
         function initSampleData() {
+            data.shops = getDefaultShops();
+            data.carriers = getDefaultCarriers();
+
             data.products = [
                 { id: 1, sku: 'SKU001', name: '无线蓝牙耳机', location: 'A-01-01', qty: 150, minQty: 20, price: 199.00 },
                 { id: 2, sku: 'SKU002', name: '手机保护壳', location: 'A-01-02', qty: 500, minQty: 50, price: 29.90 },
@@ -1123,6 +1231,8 @@
                     customer: '张三',
                     phone: '13800138001',
                     address: '北京市朝阳区建国路100号',
+                    shopId: 'shop1',
+                    carrierId: 'sf',
                     items: [{ sku: 'SKU001', name: '无线蓝牙耳机', qty: 2 }, { sku: 'SKU002', name: '手机保护壳', qty: 1 }],
                     status: 'pending',
                     createdAt: '2024-01-15 10:30:00'
@@ -1132,6 +1242,8 @@
                     customer: '李四',
                     phone: '13800138002',
                     address: '上海市浦东新区陆家嘴金融街88号',
+                    shopId: 'shop2',
+                    carrierId: 'zt',
                     items: [{ sku: 'SKU003', name: 'USB数据线', qty: 5 }, { sku: 'SKU005', name: '手机支架', qty: 2 }],
                     status: 'pending',
                     createdAt: '2024-01-15 11:00:00'
@@ -1141,15 +1253,67 @@
                     customer: '王五',
                     phone: '13800138003',
                     address: '广州市天河区天河路200号',
+                    shopId: 'shop1',
+                    carrierId: 'sf',
                     items: [{ sku: 'SKU004', name: '移动电源10000mAh', qty: 1 }],
                     status: 'packed',
                     createdAt: '2024-01-15 09:00:00'
                 },
+                {
+                    id: 'ORD20240101004',
+                    customer: '赵六',
+                    phone: '13800138004',
+                    address: '深圳市南山区科技园路50号',
+                    shopId: 'shop3',
+                    carrierId: 'jt',
+                    items: [{ sku: 'SKU001', name: '无线蓝牙耳机', qty: 1 }],
+                    status: 'pending',
+                    createdAt: '2024-01-15 12:00:00'
+                },
+                {
+                    id: 'ORD20240101005',
+                    customer: '钱七',
+                    phone: '13800138005',
+                    address: '杭州市西湖区文三路100号',
+                    shopId: 'shop2',
+                    carrierId: 'jd',
+                    items: [{ sku: 'SKU006', name: '蓝牙音箱', qty: 1 }],
+                    status: 'pending',
+                    createdAt: '2024-01-15 13:00:00'
+                },
+                {
+                    id: 'ORD20240101006',
+                    customer: '孙八',
+                    phone: '13800138006',
+                    address: '成都市武侯区天府大道200号',
+                    shopId: 'shop4',
+                    carrierId: 'yt',
+                    items: [{ sku: 'SKU002', name: '手机保护壳', qty: 3 }, { sku: 'SKU003', name: 'USB数据线', qty: 2 }, { sku: 'SKU005', name: '手机支架', qty: 1 }],
+                    status: 'pending',
+                    createdAt: '2024-01-15 14:00:00'
+                }
             ];
 
             data.waves = [];
             data.shippedToday = 3;
             saveData();
+        }
+
+        // Helper functions
+        function getShopName(shopId) {
+            const shop = data.shops.find(s => s.id === shopId);
+            return shop ? shop.name : '-';
+        }
+
+        function getCarrierName(carrierId) {
+            const carrier = data.carriers.find(c => c.id === carrierId);
+            return carrier ? carrier.name : '-';
+        }
+
+        function getOrderSkuCount(order) {
+            // Count unique SKUs in the order
+            const uniqueSkus = new Set(order.items.map(i => i.sku));
+            return uniqueSkus.size;
         }
 
         // ============= Navigation =============
@@ -1367,33 +1531,57 @@
 
         // ============= Order Functions =============
         function updateOrdersTable() {
+            // Populate filter dropdowns
+            const shopFilterEl = document.getElementById('orderShopFilter');
+            if (shopFilterEl && shopFilterEl.options.length <= 1) {
+                shopFilterEl.innerHTML = '<option value="all">全部店铺</option>' +
+                    data.shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            }
+
+            const carrierFilterEl = document.getElementById('orderCarrierFilterList');
+            if (carrierFilterEl && carrierFilterEl.options.length <= 1) {
+                carrierFilterEl.innerHTML = '<option value="all">全部物流</option>' +
+                    data.carriers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
+
             const search = document.getElementById('orderSearch')?.value.toLowerCase() || '';
             const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
+            const shopFilter = document.getElementById('orderShopFilter')?.value || 'all';
+            const carrierFilter = document.getElementById('orderCarrierFilterList')?.value || 'all';
 
             let filtered = data.orders.filter(o => {
                 const matchSearch = o.id.toLowerCase().includes(search) || o.customer.toLowerCase().includes(search);
                 const matchStatus = statusFilter === 'all' || o.status === statusFilter;
-                return matchSearch && matchStatus;
+                const matchShop = shopFilter === 'all' || o.shopId === shopFilter;
+                const matchCarrier = carrierFilter === 'all' || o.carrierId === carrierFilter;
+                return matchSearch && matchStatus && matchShop && matchCarrier;
             });
 
             const table = document.getElementById('ordersTable');
-            table.innerHTML = filtered.map(order => `
-                <tr>
-                    <td class="checkbox-cell"><input type="checkbox" class="order-checkbox" value="${order.id}"></td>
-                    <td><strong>${order.id}</strong></td>
-                    <td>${order.customer}</td>
-                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${order.address}</td>
-                    <td>${order.items.map(i => `${i.name} x${i.qty}`).join('<br>')}</td>
-                    <td>${getStatusBadge(order.status)}</td>
-                    <td>${order.createdAt}</td>
-                    <td class="action-buttons">
-                        ${order.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="startPicking('${order.id}')">拣货</button>` : ''}
-                        ${order.status === 'picking' ? `<button class="btn btn-sm btn-success" onclick="completePacking('${order.id}')">完成打包</button>` : ''}
-                        ${order.status === 'packed' ? `<button class="btn btn-sm btn-success" onclick="showShippingModal('${order.id}')">发货</button>` : ''}
-                        <button class="btn btn-sm btn-outline" onclick="viewOrder('${order.id}')">详情</button>
-                    </td>
-                </tr>
-            `).join('');
+            table.innerHTML = filtered.map(order => {
+                const skuCount = getOrderSkuCount(order);
+                const orderTypeBadge = skuCount === 1
+                    ? '<span class="badge badge-info" style="font-size: 0.65rem; margin-left: 0.25rem;">单品</span>'
+                    : '<span class="badge badge-warning" style="font-size: 0.65rem; margin-left: 0.25rem;">多品</span>';
+
+                return `
+                    <tr>
+                        <td class="checkbox-cell"><input type="checkbox" class="order-checkbox" value="${order.id}"></td>
+                        <td><strong>${order.id}</strong>${orderTypeBadge}</td>
+                        <td><span class="badge badge-gray" style="font-size: 0.7rem;">${getShopName(order.shopId)}</span></td>
+                        <td>${order.customer}</td>
+                        <td><span class="badge badge-gray" style="font-size: 0.7rem;">${getCarrierName(order.carrierId)}</span></td>
+                        <td style="max-width: 200px;">${order.items.map(i => `${i.name} x${i.qty}`).join('<br>')}</td>
+                        <td>${getStatusBadge(order.status)}</td>
+                        <td class="action-buttons">
+                            ${order.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="startPicking('${order.id}')">拣货</button>` : ''}
+                            ${order.status === 'picking' ? `<button class="btn btn-sm btn-success" onclick="completePacking('${order.id}')">完成打包</button>` : ''}
+                            ${order.status === 'packed' ? `<button class="btn btn-sm btn-success" onclick="showShippingModal('${order.id}')">发货</button>` : ''}
+                            <button class="btn btn-sm btn-outline" onclick="viewOrder('${order.id}')">详情</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function filterOrders() {
@@ -1409,6 +1597,18 @@
             document.getElementById('orderCustomer').value = '';
             document.getElementById('orderPhone').value = '';
             document.getElementById('orderAddress').value = '';
+
+            // Populate shop dropdown
+            const shopSelect = document.getElementById('orderShop');
+            shopSelect.innerHTML = data.shops.map(s =>
+                `<option value="${s.id}">${s.name} (${s.platform})</option>`
+            ).join('');
+
+            // Populate carrier dropdown
+            const carrierSelect = document.getElementById('orderCarrier');
+            carrierSelect.innerHTML = data.carriers.map(c =>
+                `<option value="${c.id}">${c.name}</option>`
+            ).join('');
 
             // Reset order items
             const container = document.getElementById('orderItemsContainer');
@@ -1460,6 +1660,8 @@
         }
 
         function createOrder() {
+            const shopId = document.getElementById('orderShop').value;
+            const carrierId = document.getElementById('orderCarrier').value;
             const customer = document.getElementById('orderCustomer').value.trim();
             const phone = document.getElementById('orderPhone').value.trim();
             const address = document.getElementById('orderAddress').value.trim();
@@ -1497,6 +1699,8 @@
                 customer,
                 phone,
                 address,
+                shopId,
+                carrierId,
                 items,
                 status: 'pending',
                 createdAt: now.toLocaleString('zh-CN')
@@ -1642,25 +1846,44 @@
                 container.innerHTML = `
                     <div class="empty-state" id="noWaveMessage">
                         <div class="empty-state-icon">📦</div>
-                        <div>暂无播种批次</div>
+                        <div>暂无拣货批次</div>
                         <div style="margin-top: 0.5rem; font-size: 0.875rem;">待处理订单: ${pendingOrders} 个</div>
                     </div>
                 `;
             } else {
                 container.innerHTML = data.waves.map(wave => {
                     const progress = wave.completedItems ? Math.round(wave.completedItems / wave.totalItems * 100) : 0;
+
+                    // Build filter badges
+                    let filterBadges = '';
+                    if (wave.waveTypeDesc) {
+                        filterBadges += `<span class="badge badge-info" style="font-size: 0.65rem;">${wave.waveTypeDesc}</span>`;
+                    }
+                    if (wave.shopId) {
+                        filterBadges += `<span class="badge badge-gray" style="font-size: 0.65rem;">${getShopName(wave.shopId)}</span>`;
+                    }
+                    if (wave.carrierId) {
+                        filterBadges += `<span class="badge badge-gray" style="font-size: 0.65rem;">${getCarrierName(wave.carrierId)}</span>`;
+                    }
+
                     return `
                         <div class="wave-item ${currentWave && currentWave.id === wave.id ? 'selected' : ''}" onclick="selectWave('${wave.id}')">
                             <div class="wave-info">
                                 <div>
-                                    <strong>${wave.id}</strong>
-                                    <div style="font-size: 0.875rem; color: var(--gray-500);">
-                                        ${wave.orders.length} 个订单 | ${wave.totalItems} 件商品
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <strong>${wave.id}</strong>
+                                        ${filterBadges}
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                        ${wave.orders.length} 个订单 | ${wave.skuCount || Object.keys(wave.pickList).length} 种SKU | ${wave.totalItems} 件商品
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-400);">
+                                        创建: ${wave.createdAt}
                                     </div>
                                 </div>
                                 <div class="action-buttons">
                                     ${wave.status === 'pending' ? `<span class="badge badge-warning">待开始</span>` : ''}
-                                    ${wave.status === 'in_progress' ? `<span class="badge badge-info">播种中</span>` : ''}
+                                    ${wave.status === 'in_progress' ? `<span class="badge badge-info">拣货中</span>` : ''}
                                     ${wave.status === 'completed' ? `<span class="badge badge-success">已完成</span>` : ''}
                                     <button class="btn btn-sm btn-danger" onclick="deleteWave('${wave.id}', event)">删除</button>
                                 </div>
@@ -1686,22 +1909,147 @@
                 return;
             }
 
-            const container = document.getElementById('waveOrderList');
-            container.innerHTML = pendingOrders.map(order => `
-                <div class="wave-item" style="cursor: default;">
-                    <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer;">
-                        <input type="checkbox" class="wave-order-checkbox" value="${order.id}" checked>
-                        <div style="flex: 1;">
-                            <strong>${order.id}</strong> - ${order.customer}
-                            <div style="font-size: 0.875rem; color: var(--gray-500);">
-                                ${order.items.map(i => `${i.name} x${i.qty}`).join(', ')}
-                            </div>
-                        </div>
-                    </label>
-                </div>
-            `).join('');
+            // Populate shop filter
+            const shopFilter = document.getElementById('waveShopFilter');
+            shopFilter.innerHTML = '<option value="all">全部店铺</option>' +
+                data.shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+            // Populate carrier filter
+            const carrierFilter = document.getElementById('waveCarrierFilter');
+            carrierFilter.innerHTML = '<option value="all">全部物流</option>' +
+                data.carriers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            // Reset filters
+            document.getElementById('waveOrderType').value = 'all';
+            document.getElementById('waveSelectAll').checked = false;
 
             showModal('createWaveModal');
+            filterWaveOrders();
+        }
+
+        function resetWaveFilters() {
+            document.getElementById('waveOrderType').value = 'all';
+            document.getElementById('waveShopFilter').value = 'all';
+            document.getElementById('waveCarrierFilter').value = 'all';
+            filterWaveOrders();
+        }
+
+        function filterWaveOrders() {
+            const orderType = document.getElementById('waveOrderType').value;
+            const shopFilter = document.getElementById('waveShopFilter').value;
+            const carrierFilter = document.getElementById('waveCarrierFilter').value;
+
+            let pendingOrders = data.orders.filter(o => o.status === 'pending');
+
+            // Filter by order type
+            if (orderType === 'single') {
+                pendingOrders = pendingOrders.filter(o => getOrderSkuCount(o) === 1);
+            } else if (orderType === 'multi') {
+                pendingOrders = pendingOrders.filter(o => getOrderSkuCount(o) > 1);
+            }
+
+            // Filter by shop
+            if (shopFilter !== 'all') {
+                pendingOrders = pendingOrders.filter(o => o.shopId === shopFilter);
+            }
+
+            // Filter by carrier
+            if (carrierFilter !== 'all') {
+                pendingOrders = pendingOrders.filter(o => o.carrierId === carrierFilter);
+            }
+
+            // Update filtered count
+            document.getElementById('waveFilteredCount').textContent = pendingOrders.length;
+
+            // Render order list
+            const container = document.getElementById('waveOrderList');
+            if (pendingOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 2rem;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📭</div>
+                        <div>没有符合条件的订单</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = pendingOrders.map(order => {
+                    const skuCount = getOrderSkuCount(order);
+                    const totalQty = order.items.reduce((sum, i) => sum + i.qty, 0);
+                    const orderTypeBadge = skuCount === 1
+                        ? '<span class="badge badge-info" style="font-size: 0.65rem;">单品</span>'
+                        : '<span class="badge badge-warning" style="font-size: 0.65rem;">多品</span>';
+
+                    return `
+                        <div class="wave-order-item" style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-200);">
+                            <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer;">
+                                <input type="checkbox" class="wave-order-checkbox" value="${order.id}" onchange="updateWaveStats()">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <strong>${order.id}</strong>
+                                        ${orderTypeBadge}
+                                        <span class="badge badge-gray" style="font-size: 0.65rem;">${getShopName(order.shopId)}</span>
+                                        <span class="badge badge-gray" style="font-size: 0.65rem;">${getCarrierName(order.carrierId)}</span>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--gray-700); margin-top: 0.25rem;">
+                                        ${order.customer} | ${order.address.substring(0, 30)}${order.address.length > 30 ? '...' : ''}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                        ${order.items.map(i => `${i.name} x${i.qty}`).join(', ')}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-400); margin-top: 0.25rem;">
+                                        ${skuCount} 种SKU | ${totalQty} 件商品 | ${order.createdAt}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Update stats display
+            document.getElementById('waveOrderStats').textContent =
+                `共 ${data.orders.filter(o => o.status === 'pending').length} 个待处理订单`;
+
+            updateWaveStats();
+        }
+
+        function toggleWaveSelectAll() {
+            const checked = document.getElementById('waveSelectAll').checked;
+            document.querySelectorAll('.wave-order-checkbox').forEach(cb => cb.checked = checked);
+            updateWaveStats();
+        }
+
+        function updateWaveStats() {
+            const selected = document.querySelectorAll('.wave-order-checkbox:checked');
+            const selectedIds = Array.from(selected).map(cb => cb.value);
+
+            document.getElementById('waveSelectedCount').textContent = selectedIds.length;
+
+            // Calculate total items
+            let totalItems = 0;
+            selectedIds.forEach(orderId => {
+                const order = data.orders.find(o => o.id === orderId);
+                if (order) {
+                    totalItems += order.items.reduce((sum, i) => sum + i.qty, 0);
+                }
+            });
+            document.getElementById('waveTotalItems').textContent = totalItems;
+
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.wave-order-checkbox');
+            const selectAllCb = document.getElementById('waveSelectAll');
+            if (allCheckboxes.length === 0) {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = false;
+            } else if (selectedIds.length === 0) {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = false;
+            } else if (selectedIds.length === allCheckboxes.length) {
+                selectAllCb.checked = true;
+                selectAllCb.indeterminate = false;
+            } else {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = true;
+            }
         }
 
         function confirmCreateWave() {
@@ -1715,10 +2063,16 @@
             const waveId = 'WAVE' + Date.now();
             const orders = selectedOrders.map(id => data.orders.find(o => o.id === id));
 
+            // Get filter info for wave description
+            const orderType = document.getElementById('waveOrderType').value;
+            const shopFilter = document.getElementById('waveShopFilter').value;
+            const carrierFilter = document.getElementById('waveCarrierFilter').value;
+
             // Calculate total items and create consolidated pick list
             let totalItems = 0;
             const pickList = {};
 
+            // Sort pick list by location for optimized picking path
             orders.forEach(order => {
                 order.items.forEach(item => {
                     if (!pickList[item.sku]) {
@@ -1737,14 +2091,31 @@
                 });
             });
 
+            // Sort by location for optimized picking
+            const sortedPickList = Object.values(pickList).sort((a, b) => {
+                return (a.location || 'ZZZ').localeCompare(b.location || 'ZZZ');
+            });
+
+            // Determine wave type description
+            let waveTypeDesc = '';
+            if (orderType === 'single') waveTypeDesc = '单品订单';
+            else if (orderType === 'multi') waveTypeDesc = '多品订单';
+            else waveTypeDesc = '混合订单';
+
             const wave = {
                 id: waveId,
                 orders: selectedOrders,
-                pickList: Object.values(pickList),
+                pickList: sortedPickList,
                 totalItems,
                 completedItems: 0,
                 status: 'pending',
-                createdAt: new Date().toLocaleString('zh-CN')
+                createdAt: new Date().toLocaleString('zh-CN'),
+                // Additional metadata
+                orderType: orderType,
+                shopId: shopFilter !== 'all' ? shopFilter : null,
+                carrierId: carrierFilter !== 'all' ? carrierFilter : null,
+                waveTypeDesc: waveTypeDesc,
+                skuCount: Object.keys(pickList).length
             };
 
             data.waves.push(wave);

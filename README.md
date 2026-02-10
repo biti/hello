@@ -10,3 +10,15 @@
    - 空格、↑ 或 W：跳跃。
 
 踩到小怪可以将它消灭。顶到问号砖会掉落蘑菇，吃掉后主角会变大。
+
+
+## PDF 结构化解析单页面应用
+
+新增 `pdf-parser.html`：可在浏览器中上传 PDF，解析文本并输出结构化 JSON（包含 metadata/pages/keyValues/tables/rawText）。
+
+使用方式：
+
+1. 直接打开 `pdf-parser.html`。
+2. 点击“选择 PDF”并上传文件。
+3. 点击“解析并生成结构化数据”。
+4. 可点击“下载 JSON”导出结果。
